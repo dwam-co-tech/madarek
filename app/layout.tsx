@@ -4,8 +4,10 @@ import "./globals.css";
 
 const cairo = Cairo({
   variable: "--font-cairo",
-  subsets: ["arabic"],
-  weight: ["300", "400", "700", "900"],
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -25,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={`${cairo.variable} antialiased`}>{children}</body>
+      <body className={`${cairo.className} ${cairo.variable} antialiased`}>{children}</body>
     </html>
   );
 }

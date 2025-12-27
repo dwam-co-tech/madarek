@@ -97,14 +97,14 @@ function IssuePanel() {
         : "";
     const data = { title: "مدارك", text: "اطلع على عدد المجلة", url };
     if (navigator.share) {
-      navigator.share(data).catch(() => {});
+      navigator.share(data).catch(() => { });
     } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).catch(() => {});
+      navigator.clipboard.writeText(url).catch(() => { });
     }
   };
   return (
     <section className="issue-section">
-     
+
       <a
         className="book-container"
         href={downloadHref}
@@ -116,10 +116,10 @@ function IssuePanel() {
           <img alt="مجلة مدارك" src={coverSrc} />
         </div>
       </a>
-       <div className="issue-header">
+      <div className="issue-header">
         <h2 className="issue-title">
           {issue.numberTitle}
-          
+
           {/* <span className="issue-title-accent">{issue.hijriDay}</span> */}
         </h2>
         <div className="issue-dates">
@@ -129,7 +129,7 @@ function IssuePanel() {
       </div>
       <div className="issue-metrics" aria-label="عدد المشاهدات">
         <svg className="metric-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M12 5c-5.5 0-9.8 4.4-10.9 6 .9 1.3 4.7 6 10.9 6s10-4.7 10.9-6c-1.1-1.6-5.4-6-10.9-6Zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4Zm0-6.5c-1.4 0-2.5 1.1-2.5 2.5S10.6 13.5 12 13.5s2.5-1.1 2.5-2.5S13.4 8.5 12 8.5Z"/>
+          <path fill="currentColor" d="M12 5c-5.5 0-9.8 4.4-10.9 6 .9 1.3 4.7 6 10.9 6s10-4.7 10.9-6c-1.1-1.6-5.4-6-10.9-6Zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4Zm0-6.5c-1.4 0-2.5 1.1-2.5 2.5S10.6 13.5 12 13.5s2.5-1.1 2.5-2.5S13.4 8.5 12 8.5Z" />
         </svg>
         <span className="metric-value">
           {Intl.NumberFormat("ar-EG").format(views)}
@@ -138,19 +138,19 @@ function IssuePanel() {
       <div className="issue-actions">
         <Link href={viewHref} className="action-btn action-view">
           <svg className="action-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="currentColor" d="M12 5c-5.5 0-9.8 4.4-10.9 6 .9 1.3 4.7 6 10.9 6s10-4.7 10.9-6c-1.1-1.6-5.4-6-10.9-6Zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4Z"/>
+            <path fill="currentColor" d="M12 5c-5.5 0-9.8 4.4-10.9 6 .9 1.3 4.7 6 10.9 6s10-4.7 10.9-6c-1.1-1.6-5.4-6-10.9-6Zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4Z" />
           </svg>
           <span>عرض</span>
         </Link>
         <a href={downloadHref} download className="action-btn action-download">
           <svg className="action-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="currentColor" d="M5 20h14v-2H5v2Zm6-17h2v8l3-3 1.4 1.4-5.4 5.4-5.4-5.4L7 8l3 3V3Z"/>
+            <path fill="currentColor" d="M5 20h14v-2H5v2Zm6-17h2v8l3-3 1.4 1.4-5.4 5.4-5.4-5.4L7 8l3 3V3Z" />
           </svg>
           <span>تحميل</span>
         </a>
         <button type="button" className="action-btn action-share" onClick={handleShare}>
           <svg className="action-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="currentColor" d="M18 8a3 3 0 1 0-5.9-.8L8.6 9.2a3 3 0 1 0 0 5.6l3.5 2a3 3 0 1 0 1.5-2.6l-3.5-2a3 3 0 0 0 0-2.4l3.5-2A3 3 0 0 0 18 8Z"/>
+            <path fill="currentColor" d="M18 8a3 3 0 1 0-5.9-.8L8.6 9.2a3 3 0 1 0 0 5.6l3.5 2a3 3 0 1 0 1.5-2.6l-3.5-2a3 3 0 0 0 0-2.4l3.5-2A3 3 0 0 0 18 8Z" />
           </svg>
           <span>مشاركة</span>
         </button>
@@ -158,7 +158,7 @@ function IssuePanel() {
       <div className="issue-archive">
         <Link href="/archive" className="action-btn action-archive">
           <svg className="action-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="currentColor" d="M20 6H4L3 8v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-1-2Zm-2 14H6V10h12v10ZM3 4h18v2H3V4Z"/>
+            <path fill="currentColor" d="M20 6H4L3 8v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-1-2Zm-2 14H6V10h12v10ZM3 4h18v2H3V4Z" />
           </svg>
           <span>أرشيف المجلة</span>
         </Link>
@@ -170,49 +170,49 @@ function IssuePanel() {
 export default function Home() {
   return (
     <>
-    <main className="grid min-h-screen grid-cols-[30%_40%_30%] bg-[var(--beige-100)] pb-12 home-stage">
-      <section className="relative flex h-screen items-center justify-center issue-col">
-        <IssuePanel />
-      </section>
-      <section className="relative flex flex-col h-screen items-center justify-center logo-col">
-        <Image
-          src={logoPng}
-          alt="شعار مدارك"
-          width={620}
-          height={620}
-          priority
-          className="drop-shadow-[0_10px_10px_var(--brown-900)] logo-main"
-        />
-        <p className="font-fanan text-center text-xl mt-4">
-          مجلة شهرية علمية متخصصة في بيان حقيقة الصوفية
-        </p>
-      </section>
-      <section className="flex h-screen items-center justify-center px-10 arc-section arc-col">
-        <ArcMenu />
-      </section>
-    </main>
-    <footer className="site-footer">
-      <div className="footer-grid">
-        <nav className="footer-links">
-          <Link href="/about" className="footer-link">من نحن</Link>
-          <span className="footer-separator" style={{ color: "var(--beige-100)" }}>.</span>
-          <Link href="/privacy" className="footer-link">سياسة الخصوصية</Link>
-          <span className="footer-separator" style={{ color: "var(--beige-100)" }}>.</span>
-          <Link href="/terms" className="footer-link">الشروط والأحكام</Link>
-        </nav>
-        <div className="footer-domain" ><a href="#" target="_blank" rel="noreferrer noopener">www.madarek.com</a></div>
-        <div className="footer-legal">
-          <a href="https://www.facebook.com/profile.php?id=61584485048024&sk=about" target="_blank" rel="noreferrer noopener" className="fb-btn" aria-label="فيسبوك">
-            <svg className="fb-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12.06C22 6.49 17.52 2 11.95 2S2 6.49 2 12.06c0 5.01 3.66 9.16 8.44 9.94v-7.03H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.97h-2.34v7.03C18.34 21.22 22 17.07 22 12.06Z"/></svg>
-          </a>
-          <span className="footer-legal-text">حقوق النشر والاقتباس متاحة للجميع</span>
-          {/* <div className="design-credit">
+      <main className="grid grid-cols-[30%_40%_30%] bg-[var(--beige-100)] home-stage">
+        <section className="relative flex items-center justify-center issue-col section-height">
+          <IssuePanel />
+        </section>
+        <section className="relative flex flex-col items-center justify-center logo-col section-height">
+          <Image
+            src={logoPng}
+            alt="شعار مدارك"
+            width={620}
+            height={620}
+            priority
+            className="drop-shadow-[0_10px_10px_var(--brown-900)] logo-main"
+          />
+          <p className="font-fanan text-center text-xl mt-4">
+            مجلة شهرية علمية متخصصة في بيان حقيقة الصوفية
+          </p>
+        </section>
+        <section className="flex items-center justify-center px-10 arc-section arc-col section-height">
+          <ArcMenu />
+        </section>
+      </main>
+      <footer className="site-footer">
+        <div className="footer-grid">
+          <nav className="footer-links">
+            <Link href="/about" className="footer-link">من نحن</Link>
+            <span className="footer-separator" style={{ color: "var(--beige-100)" }}>.</span>
+            <Link href="/privacy" className="footer-link">سياسة الخصوصية</Link>
+            <span className="footer-separator" style={{ color: "var(--beige-100)" }}>.</span>
+            <Link href="/terms" className="footer-link">الشروط والأحكام</Link>
+          </nav>
+          <div className="footer-domain" ><a href="#" target="_blank" rel="noreferrer noopener">www.madarek.com</a></div>
+          <div className="footer-legal">
+            <a href="https://www.facebook.com/profile.php?id=61584485048024&sk=about" target="_blank" rel="noreferrer noopener" className="fb-btn" aria-label="فيسبوك">
+              <svg className="fb-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12.06C22 6.49 17.52 2 11.95 2S2 6.49 2 12.06c0 5.01 3.66 9.16 8.44 9.94v-7.03H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.97h-2.34v7.03C18.34 21.22 22 17.07 22 12.06Z" /></svg>
+            </a>
+            <span className="footer-legal-text">حقوق النشر والاقتباس متاحة للجميع</span>
+            {/* <div className="design-credit">
             <span>تصميم وتطوير</span>
             <Image src="/dwam.png" alt="دوام" width={28} height={28} className="dwam-logo" />
           </div> */}
+          </div>
         </div>
-      </div>
-    </footer>
+      </footer>
     </>
   );
 }
