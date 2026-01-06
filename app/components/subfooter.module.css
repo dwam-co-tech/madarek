@@ -8,6 +8,8 @@
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 280ms ease, transform 280ms ease;
+  /* position: fixed;
+  bottom: 0; */
 }
 .subfooterVisible {
   opacity: 1;
@@ -174,6 +176,7 @@
 .actionsInner {
   display: grid;
   gap: 10px;
+ 
 }
 .actionsRow {
   display: flex;

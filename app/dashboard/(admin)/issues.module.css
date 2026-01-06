@@ -1,0 +1,348 @@
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--brown-900);
+}
+
+.addButton {
+  background-color: var(--brown-900);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.addButton:hover {
+  background-color: var(--brown-700);
+}
+
+.tableWrapper {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead {
+  background-color: #f8fafc;
+}
+
+.th, .td {
+  text-align: right;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--brown-900);
+  font-size: 0.95rem;
+}
+
+.row:hover {
+  background-color: #fafafa;
+}
+
+.statusCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.switch {
+  position: relative;
+  width: 50px;
+  height: 28px;
+}
+
+.switchInput {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switchTrack {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #e2e8f0;
+  border-radius: 999px;
+  transition: background-color 0.2s ease;
+}
+
+.switchThumb {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease, right 0.2s ease;
+}
+
+.switchInput:checked + .switchTrack {
+  background: var(--brown-700);
+}
+
+.switchInput:checked + .switchTrack .switchThumb {
+  right: 26px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.iconBtn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brown-900);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconBtn:hover {
+  background-color: var(--beige-100);
+}
+
+.iconLabel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -22px;
+  background: #fff;
+  color: var(--brown-700);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.iconBtn:hover .iconLabel {
+  opacity: 1;
+}
+
+.coverPreview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  width: min(710px, 92vw);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  border-top: 4px solid var(--brown-900);
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--brown-900);
+  margin-bottom: 1rem;
+}
+.confirmText {
+  color: var(--brown-700);
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.modalGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--brown-700);
+}
+
+.input {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  background: #fafafa;
+}
+
+.fileInput {
+  padding: 0.4rem 0.6rem;
+  border: 1px dashed #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.saveBtn {
+  background-color: var(--brown-900);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cancelBtn {
+  background-color: #f1f5f9;
+  color: var(--brown-900);
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toastCenter {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: var(--brown-900);
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 16px 34px rgba(58, 36, 17, 0.28);
+  padding: 1rem 1.25rem;
+  z-index: 1100;
+  width: min(520px, 92vw);
+  text-align: center;
+}
+
+.toastIcon {
+  color: #fff;
+}
+
+.toastMessage {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.toastShow {
+  animation: toastFade 2s ease-in-out forwards;
+}
+
+@keyframes toastFade {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  10% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.98); }
+}
+
+.cards {
+  display: none;
+  gap: 0.75rem;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "title actions"
+    "meta actions"
+    "status actions";
+  align-items: start;
+  gap: 0.6rem;
+}
+.cardTitle {
+  grid-area: title;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 800;
+  color: var(--brown-900);
+}
+.cardMeta {
+  grid-area: meta;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: var(--brown-700);
+  font-weight: 700;
+}
+.cardStatus {
+  grid-area: status;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.cardActions {
+  grid-area: actions;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+@media (max-width: 900px) {
+  .tableWrapper {
+    display: none;
+  }
+  .cards {
+    display: grid;
+  }
+  .pageHeader {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+}

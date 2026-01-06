@@ -1,0 +1,73 @@
+.menu {
+  background: linear-gradient(135deg, #bc9c67, #f1f5f9);
+  color: var(--brown-900);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  padding: 10px 12px;
+  min-width: 240px;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 220ms ease;
+  z-index: 10000;
+}
+.menuOpen {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.menuHeader {
+  font-weight: 800;
+  font-size: 14px;
+  padding-bottom: 6px;
+  color: var(--brown-800);
+}
+.menuList {
+  display: grid;
+  gap: 8px;
+}
+.menuItem {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff2e2a4;
+  color: var(--brown-900);
+  text-decoration: none;
+  border: 1px solid #eef2f7;
+}
+.menuItem:hover {
+  background: #f1f5f9;
+}
+.menuIconWrap {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #fff;
+}
+.wa {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+.tg {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+}
+.tw {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+.fb {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+.mail {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.copy {
+  background: linear-gradient(135deg, var(--brown-700), var(--brown-500));
+}
+.menuLabel {
+  font-weight: 700;
+}

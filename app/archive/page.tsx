@@ -12,17 +12,12 @@ type ArchiveItem = {
   gregLabel: string;
   cover: string;
   href: string;
+  pdf: string;
   views: number;
 };
 
-const initialItems: ArchiveItem[] = [
-  { id: "1", title: "العدد الأول", hijriLabel: "رجب ١٤٤٧هـ", gregLabel: "يناير ٢٠٢٦م", cover: "/cover.jpg", href: "/editorial-opening", views: 125 },
-  // { id: "2", title: "العدد الثاني", hijriLabel: "شعبان ١٤٤٧هـ", gregLabel: "فبراير ٢٠٢٦م", cover: "/cover.jpg", href: "/editorial-opening", views: 2345 },
-  // { id: "3", title: "العدد الثالث", hijriLabel: "رمضان ١٤٤٧هـ", gregLabel: "مارس ٢٠٢٦م", cover: "/cover.jpg", href: "/editorial-opening", views: 3456 },
-  // { id: "4", title: "العدد الرابع", hijriLabel: "شوال ١٤٤٧هـ", gregLabel: "أبريل ٢٠٢٦م", cover: "/cover.jpg", href: "/editorial-opening", views: 4567 },
-  // { id: "5", title: "العدد الخامس", hijriLabel: "ذو القعدة ١٤٤٧هـ", gregLabel: "مايو ٢٠٢٦م", cover: "/cover.jpg", href: "/editorial-opening", views: 1789 },
-  // { id: "6", title: "العدد السادس", hijriLabel: "ذو الحجة ١٤٤٧هـ", gregLabel: "يونيو ٢٠٢٦م", cover: "/cover.jpg", href: "/editorial-opening", views: 2890 },
-];
+import { getPublishedIssues } from "@/app/lib/issues.service";
+import type { IssueDTO } from "@/app/lib/issues.model";
 
 export default function ArchivePage() {
   const issueTitle = "أرشيف المجلة";
@@ -30,6 +25,7 @@ export default function ArchivePage() {
   const footerSentinelRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
   const [sortDesc, setSortDesc] = useState(true);
+  const [itemsState, setItemsState] = useState<ArchiveItem[]>([]);
 
   useEffect(() => {
     const el = footerSentinelRef.current;
@@ -54,8 +50,43 @@ export default function ArchivePage() {
     };
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getPublishedIssues();
+        const sanitize = (s: string | undefined | null) => String(s ?? "").replace(/[`]+/g, "").trim();
+        const mapped: ArchiveItem[] = (Array.isArray(list) ? list : []).map((it: IssueDTO) => ({
+          id: String(it.id),
+          title: it.title,
+          hijriLabel: it.hijri_date ?? "",
+          gregLabel: it.gregorian_date ?? "",
+          cover: sanitize(it.cover_image) || "/cover.jpg",
+          href: sanitize(it.pdf_file),
+          pdf: sanitize(it.pdf_file),
+          views: (() => {
+            const toNum = (v: unknown) => {
+              if (typeof v === "number") return v;
+              if (typeof v === "string") {
+                const n = Number(v);
+                return Number.isFinite(n) ? n : 0;
+              }
+              return 0;
+            };
+            const vc = (it as Record<string, unknown>)["views_count"];
+            const v1 = toNum(vc);
+            if (v1 > 0) return v1;
+            return toNum(it.views);
+          })(),
+        }));
+        setItemsState(mapped);
+      } catch {
+        setItemsState([]);
+      }
+    })();
+  }, []);
+
   const items = useMemo(() => {
-    const filtered = initialItems.filter((it) => {
+    const filtered = itemsState.filter((it) => {
       const q = query.trim();
       if (!q) return true;
       const text = `${it.title} ${it.hijriLabel} ${it.gregLabel}`.toLowerCase();
@@ -63,7 +94,7 @@ export default function ArchivePage() {
     });
     const sorted = [...filtered].sort((a, b) => (sortDesc ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id)));
     return sorted;
-  }, [query, sortDesc]);
+  }, [itemsState, query, sortDesc]);
 
   return (
     <main className={styles.stage}>
@@ -71,7 +102,7 @@ export default function ArchivePage() {
 
       <section className={styles.contentArea}>
         <div className={styles.archiveHeader}>
-          <h2 className={styles.archiveTitle}>تصفح الأعداد السابقة</h2>
+          <h2 className={styles.archiveTitle}>أعداد سنة 1447 هـ</h2>
           <div className={styles.controls}>
             <div className={styles.searchBox}>
               <input
@@ -106,7 +137,7 @@ export default function ArchivePage() {
               <IssueSection
                 coverSrc={it.cover}
                 viewHref={it.href}
-                downloadHref="/magazine2.pdf"
+                downloadHref={it.pdf}
                 views={it.views}
                 numberTitle={it.title}
                 hijriYear={it.hijriLabel}

@@ -1,10 +1,13 @@
 /* الصفحة: أرشيف المجلة */
 .stage {
-  min-height: 100vh;
+  min-height: 105vh;
   width: 100%;
-  display: grid;
-  place-items: center;
-  position: relative;
+  display: flex;
+  /* place-items: center;
+  position: relative; */
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   isolation: isolate;
   background: var(--beige-100);
   background-image: url("/78950.jpg");
@@ -93,11 +96,15 @@
   display: grid;
   grid-template-rows: auto auto auto;
   gap: 10px;
+  position: relative;
   border-radius: 18px;
   background: linear-gradient(135deg, #fff, var(--beige-150));
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25), inset 0 0 100px rgba(255, 255, 255, 0.08);
-  overflow: hidden;
+  overflow: visible;
   transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.card:has(.share-open) {
+  z-index: 1000;
 }
 .card:hover {
   transform: translateY(-2px);

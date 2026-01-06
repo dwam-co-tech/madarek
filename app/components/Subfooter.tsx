@@ -194,7 +194,7 @@ export default function Subfooter({
           <div className={styles.footerSideRight}>
             <span>تواصل معنا</span>
             {/* <Image src="/dwam.png" alt="دوام" width={28} height={28} className={styles.dwamLogo} /> */}
-            <a href="https://www.facebook.com/profile.php?id=61584485048024&sk=about" target="_blank" rel="noreferrer noopener" className={styles.fbInline} aria-label="فيسبوك">
+            <a href="https://www.facebook.com/profile.php?id=61584485048024" target="_blank" rel="noreferrer noopener" className={styles.fbInline} aria-label="فيسبوك">
               <svg viewBox="0 0 24 24" className={styles.fbIcon} aria-hidden="true"><path fill="currentColor" d="M22 12.06C22 6.49 17.52 2 11.95 2S2 6.49 2 12.06c0 5.01 3.66 9.16 8.44 9.94v-7.03H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.97h-2.34v7.03C18.34 21.22 22 17.07 22 12.06Z"/></svg>
             </a>
           </div>
