@@ -5,10 +5,12 @@ import type {
   CreateIssueResponse,
   IssueDTO,
   IssueDetailDTO,
+  ArticleDTO,
   DeleteIssueResponse,
   UpdateIssuePayload,
   UpdateIssueResponse,
   PublishIssueResponse,
+  UnpublishIssueResponse,
 } from './issues.model';
 
 function toSlug(input: string): string {
@@ -111,6 +113,19 @@ export async function publishIssue(id: number | string): Promise<PublishIssueRes
   return data as PublishIssueResponse;
 }
 
+export async function unpublishIssue(id: number | string): Promise<UnpublishIssueResponse> {
+  const form = new FormData();
+  form.append('status', 'draft');
+  const res = await fetch(buildApiUrl(`/api/issues/${id}/publish`), {
+    method: 'POST',
+    headers: makeAuthHeaders({ Accept: 'application/json' }),
+    body: form,
+  });
+  const data = await parseJson(res);
+  ensureOk(res, data, 'فشل إلغاء نشر العدد');
+  return data as UnpublishIssueResponse;
+}
+
 export async function getIssue(id: number | string): Promise<IssueDetailDTO> {
   const res = await fetch(buildApiUrl(`/api/issues/${id}`), {
     method: 'GET',
@@ -121,6 +136,20 @@ export async function getIssue(id: number | string): Promise<IssueDetailDTO> {
     ensureOk(res, data, 'فشل جلب بيانات العدد');
   }
   return data as IssueDetailDTO;
+}
+
+export async function getIssueArticles(id: number | string): Promise<ArticleDTO[]> {
+  const res = await fetch(buildApiUrl(`/api/issues/${id}/articles`), {
+    method: 'GET',
+    headers: makeAuthHeaders({ Accept: 'application/json' }),
+  });
+  const data = await parseJson(res);
+  ensureOk(res, data, 'فشل جلب مقالات العدد');
+  if (Array.isArray(data)) return data as ArticleDTO[];
+  const obj = data as { articles?: unknown; data?: unknown };
+  if (Array.isArray(obj.articles)) return obj.articles as ArticleDTO[];
+  if (Array.isArray(obj.data)) return obj.data as ArticleDTO[];
+  return [];
 }
 
 export async function deleteIssue(id: number | string): Promise<DeleteIssueResponse> {

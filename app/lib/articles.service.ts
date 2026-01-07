@@ -59,23 +59,43 @@ export async function getArticleById(id: number | string): Promise<ArticleDetail
 }
 
 export async function updateArticle(id: number | string, payload: UpdateArticlePayload): Promise<UpdateArticleResponse> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' };
+  const baseHeaders: Record<string, string> = { Accept: 'application/json' };
   const token = getAuthToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(buildApiUrl(`/api/articles/${id}`), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
-  const data = (await res.json()) as unknown;
-  if (!res.ok || typeof data !== 'object' || data === null) {
-    let msg = 'فشل تحديث المقال';
-    if (typeof data === 'object' && data !== null) {
-      const maybe = data as { message?: unknown; error?: unknown };
-      if (typeof maybe.message === 'string') msg = maybe.message;
-      else if (typeof maybe.error === 'string') msg = maybe.error;
+  if (token) baseHeaders['Authorization'] = `Bearer ${token}`;
+  const send = async (method: string, body: BodyInit, extraHeaders?: Record<string, string>) => {
+    const res = await fetch(buildApiUrl(`/api/articles/${id}`), {
+      method,
+      headers: { ...baseHeaders, ...(extraHeaders ?? {}) },
+      body,
+    });
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
     }
-    throw new Error(msg);
+    return { res, data };
+  };
+  const jsonHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+  const attempts = [
+    () => send('PUT', JSON.stringify(payload), jsonHeaders),
+    () => send('PATCH', JSON.stringify(payload), jsonHeaders),
+    () => send('POST', JSON.stringify(payload), { ...jsonHeaders, 'X-HTTP-Method-Override': 'PUT' }),
+  ];
+  for (const run of attempts) {
+    const { res, data } = await run();
+    if (res.ok && typeof data === 'object' && data !== null) {
+      return data as UpdateArticleResponse;
+    }
+    if (res.status !== 405) {
+      let msg = 'فشل تحديث المقال';
+      if (typeof data === 'object' && data !== null) {
+        const maybe = data as { message?: unknown; error?: unknown };
+        if (typeof maybe.message === 'string') msg = maybe.message;
+        else if (typeof maybe.error === 'string') msg = maybe.error;
+      }
+      throw new Error(msg);
+    }
   }
-  return data as UpdateArticleResponse;
+  throw new Error('فشل تحديث المقال');
 }

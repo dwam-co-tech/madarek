@@ -69,10 +69,16 @@ html, body {
 .home-stage::before {
   content: "";
   position: fixed;
-  inset: 0;
-  background-image: url("/cover.jpg");
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  background-image: var(--home-bg-url, url("/cover.jpg"));
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   opacity: 0.12;
   mix-blend-mode: multiply;
   pointer-events: none;

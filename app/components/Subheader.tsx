@@ -1,9 +1,31 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { getIssue } from "../lib/issues.service";
 import styles from "./subheader.module.css";
 
 export default function Subheader({ issueTitle, dateLabel }: { issueTitle: string; dateLabel: string }) {
+  const [issueBadge, setIssueBadge] = useState<string>("العدد الأول");
+  const [dateBadge, setDateBadge] = useState<string>(dateLabel);
+
+  useEffect(() => {
+    const id = typeof window !== "undefined" ? localStorage.getItem("selectedIssueId") : null;
+    if (!id) return;
+    (async () => {
+      try {
+        const detail = await getIssue(id);
+        const name = (detail.title || issueTitle).trim();
+        setIssueBadge(name);
+        const hj = detail.hijri_date?.trim();
+        if (hj) setDateBadge(hj);
+        else setDateBadge(dateLabel);
+      } catch {
+        setIssueBadge("العدد الأول");
+        setDateBadge(dateLabel);
+      }
+    })();
+  }, [dateLabel, issueTitle]);
   return (
     <header className={styles.subheader}>
       <div className={styles.subheaderInner}>
@@ -13,8 +35,8 @@ export default function Subheader({ issueTitle, dateLabel }: { issueTitle: strin
         <div className={styles.headerMeta}>
           <h1 className={styles.headerTitle}>{issueTitle}</h1>
           <div className={styles.headerRow}>
-            <span className={styles.badge}>العدد الأول</span>
-            <span className={styles.badge}>{dateLabel}</span>
+            <span className={styles.badge}>{issueBadge}</span>
+            <span className={styles.badge}>{dateBadge}</span>
           </div>
         </div>
         <div className={styles.headerSpacer}>

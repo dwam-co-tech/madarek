@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Pencil, Trash2, Plus, Info } from 'lucide-react';
 import styles from '../issues.module.css';
-import { createIssue, getIssues, deleteIssue as deleteIssueApi, updateIssue as updateIssueApi, publishIssue as publishIssueApi, getIssue } from '@/app/lib/issues.service';
+import { createIssue, getIssues, deleteIssue as deleteIssueApi, updateIssue as updateIssueApi, publishIssue as publishIssueApi, unpublishIssue as unpublishIssueApi, getIssue } from '@/app/lib/issues.service';
 import type { CreateIssueResponse } from '@/app/lib/issues.model';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import SearchFilter, { FieldDef, SearchQuery } from '@/components/SearchFilter';
@@ -395,7 +395,7 @@ function IssuesContent() {
         const resp = await publishIssueApi(id);
         it = resp.issue;
       } else {
-        const resp = await updateIssueApi(id, { status: 'draft' });
+        const resp = await unpublishIssueApi(id);
         it = resp.issue;
       }
       if (it) {
@@ -440,7 +440,7 @@ function IssuesContent() {
           );
         }
       }
-      setDeleteToast(next ? 'تم نشر العدد بنجاح' : 'تم تحديث الحالة بنجاح');
+      setDeleteToast(next ? 'تم نشر العدد بنجاح' : 'تم تحويل العدد إلى مسودة');
       await reloadIssues();
     } catch (err) {
       setIssues((prevList) => prevList.map((x) => (x.id === id ? { ...x, published: prev } : x)));

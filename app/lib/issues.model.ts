@@ -13,6 +13,8 @@ export type IssueDTO = {
   created_at: string;
   views?: number;
   id: number;
+  published_date?: string | null;
+  published_time?: string | null;
 };
 
 export type CreateIssueResponse = {
@@ -73,6 +75,8 @@ export type IssueDetailDTO = {
   views_count?: number;
   status: string;
   published_at?: string | null;
+  published_date?: string | null;
+  published_time?: string | null;
   is_featured?: boolean;
   sort_order?: number;
   created_at: string;
@@ -105,6 +109,11 @@ export type UpdateIssueResponse = {
 };
 
 export type PublishIssueResponse = {
+  message: string;
+  issue: IssueDTO;
+};
+
+export type UnpublishIssueResponse = {
   message: string;
   issue: IssueDTO;
 };

@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import Subheader from "../components/Subheader";
 import Subfooter from "../components/Subfooter";
+import { getIssue, getIssueArticles } from "../lib/issues.service";
+import type { ArticleDTO } from "../lib/issues.model";
 
 export default function EditorialOpening() {
   const issueTitle = "افتتاحية العدد";
@@ -14,6 +16,10 @@ export default function EditorialOpening() {
   const dateLabel = `رجب ${hijriYear} هـ - ديسمبر ${gregYear}م`;
   const [footerVisible, setFooterVisible] = useState(false);
   const footerSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [articles, setArticles] = useState<ArticleDTO[]>([]);
+  const [imageSrc, setImageSrc] = useState<string>("/cover.jpg");
+  const [pdfHref, setPdfHref] = useState<string>("");
+  const primaryTitle = articles[0]?.title ?? "افتتاحية العدد";
   const handleShare = () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const data = { title: "مدارك", text: issueTitle, url };
@@ -43,6 +49,26 @@ export default function EditorialOpening() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
+    const id = typeof window !== "undefined" ? localStorage.getItem("selectedIssueId") : null;
+    if (!id) return;
+    (async () => {
+      try {
+        const [list, detail] = await Promise.all([getIssueArticles(id), getIssue(id)]);
+        const arr = Array.isArray(list) ? list : [];
+        const wanted = arr.filter((a) => (a.className ?? "").trim() === "arc-opening");
+        setArticles(wanted);
+        setPdfHref(detail.pdf_file ?? "");
+        const first = wanted[0] ?? arr[0];
+        const img = first?.featured_image || detail.cover_image || "/cover.jpg";
+        setImageSrc(img || "/cover.jpg");
+      } catch {
+        setArticles([]);
+        setPdfHref("");
+        setImageSrc("/cover.jpg");
+      }
+    })();
+  }, []);
+  useEffect(() => {
     document.body.classList.add("subpage-scroll");
     document.documentElement.classList.add("subpage-scroll");
     return () => {
@@ -60,13 +86,13 @@ export default function EditorialOpening() {
             <div className={styles.paperInner}>
               <header className={styles.paperHeader}>
                 <div className={styles.paperBadge}>افتتاحية العدد</div>
-                <h2 className={styles.paperTitle2}>الطرق الصوفية تحتفل بمولد السيدة فاطمة رضي الله عنها مع استغلال الشيعة للحدث </h2>
+                <h2 className={styles.paperTitle2}>{primaryTitle}</h2>
               </header>
               <div className={styles.paperContent2}>
                 <div className={styles.paperImage}>
                   <div className={styles.photoFrame}>
                     <Image
-                      src="/1.jfif"
+                      src={imageSrc}
                       alt="صورة المقال"
                       fill
                       sizes="(max-width: 640px) 96vw, (max-width: 900px) 94vw, (max-width: 1200px) 32vw, 360px"
@@ -76,72 +102,19 @@ export default function EditorialOpening() {
                   </div>
                 </div>
                 <div className={styles.paperText}>
-                  <p>
-                  لا يختلف أهل السنة والجماعة في أصلٍ كبيرٍ من أصول الديانة: محبة آل بيت النبي ﷺ وتعظيم قدرهم الشرعي، وفي مقدمتهم السيدة فاطمة الزهراء رضي الله عنها. لكن الإشكال لا يبدأ من “المحبة” بوصفها معنىً قلبيًا مشروعًا، وإنما يبدأ حين تتحول هذه المحبة إلى مواسم ثابتة تُعامل معاملة الشعائر، ثم تُفتح أبوابها - بحسن قصد أو بسوء تدبير - لتصبح مجالًا رحبًا لـ الترويج العقدي المذهبي، حيث تتسلل سرديات لا تمت إلى منهج أهل السنة بصلة، مستندةً إلى حرارة العاطفة عند العامة أكثر من استنادها إلى برهان العلم.
-                  </p>
-                  <h3 className={styles.paperSubtitle}>
-                  ما الذي تكشفه الأخبار عن طبيعة الموسم؟
-                  </h3>
-                  <p>تُظهر الأخبار المتداولة أن الاحتفال اتخذ صورة “الموسم” الذي يجتمع فيه المريدون والأتباع على تلاواتٍ وأناشيد ومدائح وحلقات ذكر، مع كلماتٍ تُقرر في ظاهرها فضل آل البيت ومكانتهم.</p>
-                  <p>ففي خبر “الطريقة الشبراوية” جاء نصًا أن الاحتفال وقع يوم الجمعة 12 ديسمبر 2025، مع حضورٍ كبير من المنتسبين ومحبي آل البيت، وتقدّم الحضور الشيخ محمد عبد الخالق الشبراوي الذي شارك حلقات الذكر وألقى كلمة عن “قيم التضحية والصبر والطهارة”.</p>
-                  <p>وفي خبرٍ آخر، شاركت الطريقة الرفاعية ممثلةً في الشيخ طارق ياسين، والطريقة الجازولية الشاذلية ممثلةً في الدكتور سالم جابر الجازولي، في احتفالٍ أُقيم الإثنين 22 سبتمبر 2025 بمسجد ومقام “السيدة فاطمة النبوية”، مع إبراز “تعالي الأصوات بالمدائح والأذكار” وتأكيد أن الاحتفال تجديد لمعاني الولاء والمحبة.</p>
-                  <p>كما وُثق انعقاد احتفالٍ بمولد السيدة فاطمة الزهراء في مقر مشيخة الطريقة العزمية بالقاهرة يوم الخميس 11 ديسمبر 2025.</p>
-                  <p>هذه اللوحة مجتمعة تُثبت أننا أمام مناخ احتفالي واسع: جمهور كبير، خطاب وجداني، تكرار سنوي، وأسماء طرق وشيوخ بارزين.</p>
-                  <p>وهنا تحديدًا تتولد “المساحة الرمادية”: مساحةٌ يُمكن أن تُوظَّف فيها العاطفة الدينية توظيفًا لا يخدم العلم ولا يخدم وحدة المسلمين على المنهج الصحيح.</p>
-                  <h3 className={styles.paperSubtitle}>
-                  لماذا يخاف أهل السنة من “التوظيف الشيعي” تحديدًا؟
-                  </h3>
-                  <p>السبب ليس “وهمًا” ولا “خصومةً مجانية”، بل هو قراءة واقعية لمسارٍ معروف: الرموز الجامعة - وفي مقدمتها آل البيت - تُستخدم أحيانًا كجسرٍ لتصدير سرديات عقدية خاصة بالمذهب الإمامي، ثم تُقدَّم تدريجيًا لعامة المتدينين على أنها “محبة آل البيت”، بينما هي في حقيقتها انتقالٌ ناعم من المحبة المشروعة إلى مقولاتٍ مرفوضة عند أهل السنة (كإعادة ترتيب التاريخ الإسلامي، والطعن في بعض الصحابة، وإعادة تعريف المرجعية الدينية).</p>
-                  <p>والشاهد المهم:</p>
-                  <p>أن مؤسسات ووسائل إعلام مرتبطة بالسياق الإيراني - وهو سياق شيعي اثنا عشري واضح - تُعرّف ميلاد السيدة فاطمة الزهراء بأنه مناسبة ذات وظيفة عامة في إيران، حتى جُعل في الخطاب الرسمي والإعلامي يومًا للمرأة والأم مرتبطًا مباشرةً بهذه الذكرى.</p>
-                  <p>فالمسألة ليست مجرد “احتفال ديني”، بل هي هوية رمزية تُستثمر سياسيًا وثقافيًا. وإذا كان هذا التوظيف قائمًا في بيئته الأصلية، فكيف لا يُخشى انتقاله - بصيغ أكثر نعومة - إلى البيئات التي تُقام فيها مواسم جماهيرية مفتوحة؟</p>
-                  <p>ويزداد القلق حين نقرأ وقائع سابقة حول حضور دبلوماسي ثقافي إيراني لاحتفال الطريقة العزمية بمولد السيدة فاطمة الزهراء، مع تأكيده أن حضوره “شخصي”.</p>
-                  <p>سواء اتفقنا مع تفسير هذه الواقعة أو اختلفنا، فهي تكفي لتقرير حقيقة واحدة: أن المناسبة محل اهتمامٍ من خارج الدائرة الصوفية المحلية، وأن باب “التواصل الرمزي” يُطرق بالفعل.</p>
-                  <h3 className={styles.paperSubtitle}>
-                  أين تكون الثغرة؟ 
-                  </h3>
-                  <p>الثغرة الأكبر ليست في كلماتٍ جميلة تُقال عن فضل الزهراء رضي الله عنها فهذا حق وإنما في أمرين:</p>
-                  <ol>
-                    <li>تحويل المحبة إلى موسمٍ تعبديٍّ راتب بلا تأصيلٍ واضح من هدي السلف؛ فتتحول المناسبة مع الزمن إلى “شعيرة” في وجدان العامة، يُظن أنها من الدين بذاتها.</li>
-                    <li>الخلط بين المقامات والأسماء: فالأخبار نفسها تذكر احتفالًا بمولد “فاطمة النبوية” (وهي تسمية مرتبطة بمقام محلي) إلى جانب الاحتفاء بفاطمة الزهراء رضي الله عنها.</li>
-                  </ol>
-                  <p>وهذا الخلط -حين لا يُضبط علميًا - يسهّل على أي خطاب مذهبي أن يذيب الفوارق، ثم يمرّر رسائل مختارة تحت عنوان واحد جذّاب: “حب فاطمة”.</p>
-                  <p>ومن هنا يفهم منهج أهل السنة: الخوف ليس من ذكر فاطمة، بل من صناعة مناخٍ تتراجع فيه الحجة أمام العاطفة، وتُقدَّم فيه “الرمزية” على “المنهج”، فيصبح الجمهور سهلَ الالتقاط لأي سردية تُحسن استثمار الحب والدمعة والقصيدة.</p>
-                  <h3 className={styles.paperSubtitle}>
-                 ما المخرج العلمي الذي يحفظ المحبة ويغلق أبواب الاستغلال؟
-                  </h3>
-                  <p>المخرج ليس صدامًا مع الناس ولا تجريحًا لمشاعرهم، بل هو إعادة ضبط البوصلة:</p>
-                  <ul>
-                    <li>أن تُعلَّم فضائل السيدة فاطمة رضي الله عنها بأحاديث صحيحة وسيرة موثوقة، وتُقدَّم كنموذج عبادة وزهد وحياء وصبر، لا كعنوان موسم.</li>
-                    <li>أن يُحذَّر - بلغة علمية - من كل ما يندس في هذه المواسم من خطابٍ يُعيد تعريف التاريخ أو يفتح أبواب السبّ والطعن، أو يقرر مفاهيم العصمة والإمامة بمعناها الإمامي.</li>
-                    <li>أن تُردّ المحبة إلى “سنّة الاتباع”: من أحب آل البيت حقًا اتبع هدي النبي ﷺ في العبادة، ولم يجعل الدين مواسم مضافة بلا دليل.</li>
-                  </ul>
-                  <p>وبذلك تبقى المحبة في موضعها الشرعي، ويُسدّ الطريق على أي توظيف مذهبي يحاول أن يحوّل حب آل البيت إلى منصة لتمرير أطروحاتٍ عقدية دخيلة، خصوصًا في البيئات الجماهيرية التي يغلب عليها الوجدان على حساب التمحيص العلمي.</p>
-
-
-
-                  <div className={styles.paperSources}>
-                    <p>________________________________________</p>
-                    <p>المصادر</p>
-                    <ol>
-                      <li>
-                        <a href="https://www.dostor.org/5340648#goog_rewarded" target="_blank" rel="noopener noreferrer">
-                          الدستور — &quot;الطريقة الشبراوية&quot; تحتفل بمولد السيدة فاطمة الزهراء
-                        </a>
-                      </li>
-                      <li>
-                        <a href="https://www.gomgad.com/52265" target="_blank" rel="noopener noreferrer">
-                          الجمهورية الجديدة — الطريقة الرفاعية والجازولية تحييان مولد السيدة فاطمة النبوية
-                        </a>
-                      </li>
-                      <li>
-                        <a href="https://nabd.com/s/165126314-ece484/%D8%A7%D9%84%D8%B7%D8%B1%D9%8A%D9%82%D8%A9-%D8%A7%D9%84%D8%B4%D8%A8%D8%B1%D8%A7%D9%88%D9%8A%D8%A9-%D8%AA%D8%AD%D8%AA%D9%81%D9%84-%D8%A8%D9%85%D9%88%D9%84%D8%AF-%D8%A7%D9%84%D8%B3%D9%8A%D8%AF%D8%A9-%D9%81%D8%A7%D8%B7%D9%85%D8%A9-%D8%A7%D9%84%D8%B2%D9%87%D8%B1%D8%A7%D8%A1" target="_blank" rel="noopener noreferrer">
-                          نبض — &quot;الطريقة الشبراوية&quot; تحتفل بمولد السيدة فاطمة الزهراء
-                        </a>
-                      </li>
-                    </ol>
-                  </div>
-
+                  {articles.length === 0 ? (
+                    <p>لا توجد مقالات لهذا القسم في العدد المختار.</p>
+                  ) : (
+                    (() => {
+                      const a = articles[0];
+                      return (
+                        <article key={a.id}>
+                          <h3 className={styles.paperSubtitle}>{a.title}</h3>
+                          {a.content ? <div dangerouslySetInnerHTML={{ __html: a.content }} /> : null}
+                        </article>
+                      );
+                    })()
+                  )}
                 </div>
               </div>
               <div className={styles.paperFooter}>
@@ -195,7 +168,7 @@ export default function EditorialOpening() {
         </div>
       </div> */}
 
-      <Subfooter visible={footerVisible} shareText={issueTitle} pdfHref="/1.pdf" />
+      <Subfooter visible={footerVisible} shareText={issueTitle} pdfHref={pdfHref || "/"} />
     </main>
   );
 }

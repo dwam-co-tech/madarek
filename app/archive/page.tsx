@@ -136,7 +136,7 @@ export default function ArchivePage() {
             <article key={it.id} className={styles.card}>
               <IssueSection
                 coverSrc={it.cover}
-                viewHref={it.href}
+                viewHref={`/?issueId=${it.id}`}
                 downloadHref={it.pdf}
                 views={it.views}
                 numberTitle={it.title}

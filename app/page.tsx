@@ -3,6 +3,10 @@ import type { CSSProperties } from "react";
 import logoPng from "@/public/logo3.png";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { getIssue, getPublishedIssues } from "./lib/issues.service";
+import type { IssueDetailDTO } from "./lib/issues.model";
 
 type MenuItem = {
   label: string;
@@ -79,23 +83,31 @@ function ArcMenu() {
   );
 }
 
-function IssuePanel() {
-  const coverSrc = "/cover.jpg";
-  const viewHref = "/magazine2.pdf";
-  const downloadHref = "/magazine2.pdf";
-  const views = 125;
+function IssuePanel(props?: {
+  coverSrc?: string;
+  viewHref?: string;
+  downloadHref?: string;
+  views?: number;
+  numberTitle?: string;
+  hijriYear?: string;
+  gregorianDate?: string;
+  shareText?: string;
+}) {
+  const coverSrc = props?.coverSrc ?? "/cover.jpg";
+  const viewHref = props?.viewHref ?? "/magazine2.pdf";
+  const downloadHref = props?.downloadHref ?? "/magazine2.pdf";
+  const views = props?.views ?? 0;
   const issue = {
-    numberTitle: "العدد الأول",
-    // hijriDay: "١ رجب",
-    hijriYear: "١ رجب ١٤٤٧هـ",
-    gregorianDate: "١٠ يناير ٢٠٢٦ م",
+    numberTitle: props?.numberTitle ?? "عدد المجلة",
+    hijriYear: props?.hijriYear ?? "",
+    gregorianDate: props?.gregorianDate ?? "",
   };
   const handleShare = () => {
     const url =
       typeof window !== "undefined"
-        ? new URL("/magazine2.pdf", window.location.origin).toString()
+        ? new URL(downloadHref, window.location.origin).toString()
         : "";
-    const data = { title: "مدارك", text: "اطلع على عدد المجلة", url };
+    const data = { title: "مدارك", text: props?.shareText ?? "اطلع على عدد المجلة", url };
     if (navigator.share) {
       navigator.share(data).catch(() => { });
     } else if (navigator.clipboard) {
@@ -167,12 +179,107 @@ function IssuePanel() {
   );
 }
 
+function makeAbs(u: string) {
+  try {
+    return new URL(u, typeof window !== "undefined" ? window.location.origin : undefined).href;
+  } catch {
+    return u;
+  }
+}
+
 export default function Home() {
+  const params = useSearchParams();
+  const [issue, setIssue] = useState<IssueDetailDTO | null>(null);
+  const [bgUrl, setBgUrl] = useState<string>("/cover.jpg");
+  type CSSVars = CSSProperties & Record<string, string | number>;
+  const issueProps = useMemo(() => {
+    const title = issue?.title ?? "عدد المجلة";
+    const hijri = issue?.hijri_date ?? "";
+    const greg = issue?.gregorian_date ?? "";
+    const views = (() => {
+      const v = (issue as unknown as Record<string, unknown>)?.["views_count"];
+      if (typeof v === "number") return v;
+      if (typeof v === "string") {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      }
+      return 0;
+    })();
+    const cover = issue?.cover_image ?? "/cover.jpg";
+    const pdf = issue?.pdf_file ?? "";
+    return {
+      coverSrc: cover,
+      viewHref: pdf || "#",
+      downloadHref: pdf || "",
+      views,
+      numberTitle: title,
+      hijriYear: hijri,
+      gregorianDate: greg,
+      shareText: title,
+    };
+  }, [issue]);
+  useEffect(() => {
+    const run = async () => {
+      const issueIdParam = params.get("issueId");
+      const storedId = typeof window !== "undefined" ? localStorage.getItem("selectedIssueId") : null;
+      const idToUse = issueIdParam || storedId;
+      if (idToUse) {
+        const d = await getIssue(idToUse);
+        setIssue(d);
+        const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
+        setBgUrl(makeAbs(alt));
+        try {
+          if (typeof window !== "undefined") localStorage.setItem("selectedIssueId", String(d.id));
+        } catch {}
+        return;
+      }
+      const published = await getPublishedIssues();
+      const pick = (() => {
+        const arr = Array.isArray(published) ? published : [];
+        if (arr.length === 0) return null;
+        const withDate = arr
+          .map((it) => ({
+            it,
+            ts:
+              Date.parse((it as Record<string, unknown>)["published_at"] as string) ||
+              Date.parse((it as Record<string, unknown>)["updated_at"] as string) ||
+              0,
+          }))
+          .sort((a, b) => b.ts - a.ts)[0]?.it;
+        return withDate ?? arr.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
+      })();
+      if (pick) {
+        const d = await getIssue(pick.id);
+        setIssue(d);
+        const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
+        setBgUrl(makeAbs(alt));
+        try {
+          if (typeof window !== "undefined") localStorage.setItem("selectedIssueId", String(d.id));
+        } catch {}
+      } else {
+        setIssue(null);
+        setBgUrl("/cover.jpg");
+        try {
+          if (typeof window !== "undefined") localStorage.removeItem("selectedIssueId");
+        } catch {}
+      }
+    };
+    run();
+  }, [params]);
   return (
     <>
-      <main className="grid grid-cols-[30%_40%_30%] bg-[var(--beige-100)] home-stage">
+      <main className="grid grid-cols-[30%_40%_30%] bg-[var(--beige-100)] home-stage" style={{ ["--home-bg-url"]: `url(\"${bgUrl}\")` } as CSSVars}>
         <section className="relative flex items-center justify-center issue-col section-height">
-          <IssuePanel />
+          <IssuePanel
+            coverSrc={issueProps.coverSrc}
+            viewHref={issueProps.viewHref}
+            downloadHref={issueProps.downloadHref}
+            views={issueProps.views}
+            numberTitle={issueProps.numberTitle}
+            hijriYear={issueProps.hijriYear}
+            gregorianDate={issueProps.gregorianDate}
+            shareText={issueProps.shareText}
+          />
         </section>
         <section className="relative flex flex-col items-center justify-center logo-col section-height">
           <Image
