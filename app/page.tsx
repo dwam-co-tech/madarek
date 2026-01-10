@@ -3,10 +3,11 @@ import type { CSSProperties } from "react";
 import logoPng from "@/public/logo3.png";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getIssue, getPublishedIssues } from "./lib/issues.service";
 import type { IssueDetailDTO } from "./lib/issues.model";
+import IssueSection from "./components/IssueSection";
 
 type MenuItem = {
   label: string;
@@ -178,6 +179,7 @@ function IssuePanel(props?: {
     </section>
   );
 }
+void IssuePanel;
 
 function makeAbs(u: string) {
   try {
@@ -187,7 +189,7 @@ function makeAbs(u: string) {
   }
 }
 
-export default function Home() {
+function HomeInner() {
   const params = useSearchParams();
   const [issue, setIssue] = useState<IssueDetailDTO | null>(null);
   const [bgUrl, setBgUrl] = useState<string>("/cover.jpg");
@@ -270,7 +272,7 @@ export default function Home() {
     <>
       <main className="grid grid-cols-[30%_40%_30%] bg-[var(--beige-100)] home-stage" style={{ ["--home-bg-url"]: `url(\"${bgUrl}\")` } as CSSVars}>
         <section className="relative flex items-center justify-center issue-col section-height">
-          <IssuePanel
+          <IssueSection
             coverSrc={issueProps.coverSrc}
             viewHref={issueProps.viewHref}
             downloadHref={issueProps.downloadHref}
@@ -321,5 +323,13 @@ export default function Home() {
         </div>
       </footer>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div />}>
+      <HomeInner />
+    </Suspense>
   );
 }

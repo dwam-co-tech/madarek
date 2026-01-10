@@ -68,10 +68,10 @@ export default function IssueSection({
     e.stopPropagation();
     if (!hasPdf) return;
     const abs = makeAbsolutePdfUrl();
-    const proxy = new URL("/api/proxy-pdf", window.location.origin);
-    proxy.searchParams.set("url", abs);
     const a = document.createElement("a");
-    a.href = proxy.toString();
+    a.href = abs;
+    a.target = "_blank";
+    a.rel = "noopener,noreferrer";
     a.download = getFileName(abs);
     document.body.appendChild(a);
     a.click();

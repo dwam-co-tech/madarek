@@ -24,7 +24,7 @@ type EditableFields = {
   content: string;
 };
 
-export default function ManageArticlePage() {
+function ManageArticlePageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const articleId = params.get('id');
@@ -408,6 +408,20 @@ export default function ManageArticlePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ManageArticlePage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className={styles.page}>
+          <LoadingOverlay open={true} label="جاري التحميل..." ariaLabel="جاري التحميل" />
+        </div>
+      }
+    >
+      <ManageArticlePageInner />
+    </React.Suspense>
   );
 }
 

@@ -20,7 +20,7 @@ type Article = {
   content?: string | null;
 };
 
-export default function ArticlesAdminPage() {
+function ArticlesAdminPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const issueIdParam = params.get('id');
@@ -195,5 +195,19 @@ export default function ArticlesAdminPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ArticlesAdminPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div>
+          <LoadingOverlay open={true} label="جاري التحميل..." ariaLabel="جاري التحميل" />
+        </div>
+      }
+    >
+      <ArticlesAdminPageInner />
+    </React.Suspense>
   );
 }
