@@ -44,6 +44,7 @@ export type ArticleDTO = {
   user_id: number;
   issue_id: number;
   title: string;
+  open_title?: string | null;
   slug: string;
   keywords?: string | null;
   content?: string | null;
@@ -51,7 +52,8 @@ export type ArticleDTO = {
   featured_image?: string | null;
   gregorian_date?: string | null;
   hijri_date?: string | null;
-  references?: string | null;
+  references?: string[];
+  references_tmp?: string | null;
   status: string;
   published_at?: string | null;
   views_count?: number;

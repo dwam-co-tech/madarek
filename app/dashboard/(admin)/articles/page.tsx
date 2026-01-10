@@ -110,36 +110,12 @@ export default function ArticlesAdminPage() {
                 </td>
                 <td className={styles.td}>{a.views}</td>
                 <td className={`${styles.td} ${styles.actionsCol}`.trim()}>
-                  <button
+                  <Link
+                    href={`/dashboard/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
                     className={styles.actionBtn}
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const resp = await getArticleById(a.id);
-                        const art = resp.article;
-                        const next: Article = {
-                          id: String(art.id),
-                          title: art.title,
-                          className: a.className,
-                          issueId: String(art.issue_id),
-                          issueTitle: a.issueTitle,
-                          views: (art.views_count ?? a.views) as number,
-                          content: art.content ?? a.content ?? '',
-                        };
-                        setEditorArticle(next);
-                        setEditorContent(String(next.content ?? ''));
-                        setIsEditorOpen(true);
-                      } catch {
-                        setEditorArticle(a);
-                        setEditorContent(String(a.content ?? ''));
-                        setIsEditorOpen(true);
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
                   >
                     إدارة المحتوى
-                  </button>
+                  </Link>
                 </td>
               </tr>
             ))}
@@ -155,36 +131,12 @@ export default function ArticlesAdminPage() {
               <span>المشاهدات: {a.views}</span>
             </div>
             <div className={styles.cardActions}>
-              <button
+              <Link
+                href={`/dashboard/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
                 className={styles.cardActionBtn}
-                onClick={async () => {
-                  setIsLoading(true);
-                  try {
-                    const resp = await getArticleById(a.id);
-                    const art = resp.article;
-                    const next: Article = {
-                      id: String(art.id),
-                      title: art.title,
-                      className: a.className,
-                      issueId: String(art.issue_id),
-                      issueTitle: a.issueTitle,
-                      views: (art.views_count ?? a.views) as number,
-                      content: art.content ?? a.content ?? '',
-                    };
-                    setEditorArticle(next);
-                    setEditorContent(String(next.content ?? ''));
-                    setIsEditorOpen(true);
-                  } catch {
-                    setEditorArticle(a);
-                    setEditorContent(String(a.content ?? ''));
-                    setIsEditorOpen(true);
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
               >
                 إدارة المحتوى
-              </button>
+              </Link>
             </div>
           </div>
         ))}

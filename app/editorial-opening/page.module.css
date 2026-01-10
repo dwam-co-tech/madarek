@@ -348,8 +348,7 @@
   margin: 0.4em 0;
 }
 .paperSources a {
-  display: inline-flex;
-  align-items: center;
+  display: block;
   gap: 6px;
   color: var(--brown-800);
   text-decoration: none;

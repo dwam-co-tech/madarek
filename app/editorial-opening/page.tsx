@@ -8,6 +8,16 @@ import Subfooter from "../components/Subfooter";
 import { getIssue, getIssueArticles } from "../lib/issues.service";
 import type { ArticleDTO } from "../lib/issues.model";
 
+function stripLinks(html: string) {
+  try {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    doc.querySelectorAll("a").forEach((a) => a.replaceWith(a.textContent || ""));
+    return doc.body.innerHTML;
+  } catch {
+    return html;
+  }
+}
+
 export default function EditorialOpening() {
   const issueTitle = "افتتاحية العدد";
   const numberFmt = Intl.NumberFormat("ar-EG", { useGrouping: false });
@@ -19,7 +29,7 @@ export default function EditorialOpening() {
   const [articles, setArticles] = useState<ArticleDTO[]>([]);
   const [imageSrc, setImageSrc] = useState<string>("/cover.jpg");
   const [pdfHref, setPdfHref] = useState<string>("");
-  const primaryTitle = articles[0]?.title ?? "افتتاحية العدد";
+  const primaryTitle = articles[0]?.open_title ?? articles[0]?.title ?? "افتتاحية العدد";
   const handleShare = () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const data = { title: "مدارك", text: issueTitle, url };
@@ -85,8 +95,8 @@ export default function EditorialOpening() {
           <div className={styles.paper}>
             <div className={styles.paperInner}>
               <header className={styles.paperHeader}>
-                <div className={styles.paperBadge}>افتتاحية العدد</div>
-                <h2 className={styles.paperTitle2}>{primaryTitle}</h2>
+                <div className={styles.paperBadge}>اسم الكاتب : {(articles[0]?.author_name ?? '').trim() || 'افتتاحية العدد'}</div>
+                <h2 className={styles.paperTitle2}>{articles[0]?.open_title ?? articles[0]?.title ?? primaryTitle}</h2>
               </header>
               <div className={styles.paperContent2}>
                 <div className={styles.paperImage}>
@@ -109,8 +119,27 @@ export default function EditorialOpening() {
                       const a = articles[0];
                       return (
                         <article key={a.id}>
-                          <h3 className={styles.paperSubtitle}>{a.title}</h3>
                           {a.content ? <div dangerouslySetInnerHTML={{ __html: a.content }} /> : null}
+                          {(Array.isArray(a.references) && a.references.length) || a.references_tmp ? (
+                            <div className={styles.paperSources}>
+                              <h3 className={styles.paperSubtitle}>المراجع</h3>
+                              {Array.isArray(a.references) && a.references.length ? (
+                                <ol>
+                                  {a.references.map((lnk, idx) => (
+                                    <li key={`${lnk}-${idx}`}>
+                                      {/^https?:\/\//i.test((lnk ?? "").trim()) ? (
+                                        <a href={lnk} target="_blank" rel="noopener noreferrer">{lnk}</a>
+                                      ) : (
+                                        <span>{lnk}</span>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ol>
+                              ) : (
+                                <div dangerouslySetInnerHTML={{ __html: stripLinks(a.references_tmp ?? "") }} />
+                              )}
+                            </div>
+                          ) : null}
                         </article>
                       );
                     })()

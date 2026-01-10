@@ -32,13 +32,17 @@ export type ArticleDetailResponse = {
 export type UpdateArticlePayload = {
   content?: string;
   title?: string;
+  open_title?: string;
   keywords?: string;
   author_name?: string;
   gregorian_date?: string;
   hijri_date?: string;
-  references?: string;
+  references?: string[];
+  references_tmp?: string;
+  references_remove_indexes?: number[];
   status?: string;
   className?: string;
+  featured_image?: File;
 };
 
 export type UpdateArticleResponse = {

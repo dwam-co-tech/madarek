@@ -76,26 +76,86 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
     }
     return { res, data };
   };
-  const jsonHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-  const attempts = [
-    () => send('PUT', JSON.stringify(payload), jsonHeaders),
-    () => send('PATCH', JSON.stringify(payload), jsonHeaders),
-    () => send('POST', JSON.stringify(payload), { ...jsonHeaders, 'X-HTTP-Method-Override': 'PUT' }),
-  ];
-  for (const run of attempts) {
-    const { res, data } = await run();
-    if (res.ok && typeof data === 'object' && data !== null) {
-      return data as UpdateArticleResponse;
-    }
-    if (res.status !== 405) {
-      let msg = 'فشل تحديث المقال';
-      if (typeof data === 'object' && data !== null) {
-        const maybe = data as { message?: unknown; error?: unknown };
-        if (typeof maybe.message === 'string') msg = maybe.message;
-        else if (typeof maybe.error === 'string') msg = maybe.error;
+  const hasFile = typeof payload.featured_image !== 'undefined' && payload.featured_image !== null;
+  if (hasFile) {
+    const makeForm = () => {
+      const form = new FormData();
+      if (payload.title) form.append('title', payload.title);
+      if (payload.open_title) form.append('open_title', payload.open_title);
+      if (payload.keywords) form.append('keywords', payload.keywords);
+      if (payload.author_name) form.append('author_name', payload.author_name);
+      if (payload.gregorian_date) form.append('gregorian_date', payload.gregorian_date);
+      if (payload.hijri_date) form.append('hijri_date', payload.hijri_date);
+      if (Array.isArray(payload.references)) {
+        for (const lnk of payload.references) {
+          if (typeof lnk === 'string' && lnk.trim() !== '') {
+            form.append('references[]', lnk);
+          }
+        }
       }
-      throw new Error(msg);
+      if (payload.references_tmp) form.append('references_tmp', payload.references_tmp);
+      if (Array.isArray(payload.references_remove_indexes)) {
+        for (const idx of payload.references_remove_indexes) {
+          form.append('references_remove_indexes[]', String(idx));
+        }
+      }
+      if (payload.status) form.append('status', payload.status);
+      if (payload.className) form.append('className', payload.className);
+      if (typeof payload.content === 'string') form.append('content', payload.content);
+      if (payload.featured_image) form.append('featured_image', payload.featured_image);
+      return form;
+    };
+    const attempts = [
+      () => {
+        const f = makeForm();
+        (f as FormData).append('_method', 'PUT');
+        return send('POST', f);
+      },
+      () => {
+        const f = makeForm();
+        (f as FormData).append('_method', 'PATCH');
+        return send('POST', f);
+      },
+      () => send('PUT', makeForm()),
+    ];
+    for (const run of attempts) {
+      const { res, data } = await run();
+      if (res.ok && typeof data === 'object' && data !== null) {
+        return data as UpdateArticleResponse;
+      }
+      if (res.status !== 405) {
+        let msg = 'فشل تحديث المقال';
+        if (typeof data === 'object' && data !== null) {
+          const maybe = data as { message?: unknown; error?: unknown };
+          if (typeof maybe.message === 'string') msg = maybe.message;
+          else if (typeof maybe.error === 'string') msg = maybe.error;
+        }
+        throw new Error(msg);
+      }
     }
+    throw new Error('فشل تحديث المقال');
+  } else {
+    const jsonHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    const attempts = [
+      () => send('PUT', JSON.stringify(payload), jsonHeaders),
+      () => send('PATCH', JSON.stringify(payload), jsonHeaders),
+      () => send('POST', JSON.stringify(payload), { ...jsonHeaders, 'X-HTTP-Method-Override': 'PUT' }),
+    ];
+    for (const run of attempts) {
+      const { res, data } = await run();
+      if (res.ok && typeof data === 'object' && data !== null) {
+        return data as UpdateArticleResponse;
+      }
+      if (res.status !== 405) {
+        let msg = 'فشل تحديث المقال';
+        if (typeof data === 'object' && data !== null) {
+          const maybe = data as { message?: unknown; error?: unknown };
+          if (typeof maybe.message === 'string') msg = maybe.message;
+          else if (typeof maybe.error === 'string') msg = maybe.error;
+        }
+        throw new Error(msg);
+      }
+    }
+    throw new Error('فشل تحديث المقال');
   }
-  throw new Error('فشل تحديث المقال');
 }
