@@ -222,19 +222,19 @@ function HomeInner() {
   }, [issue]);
   useEffect(() => {
     const run = async () => {
+      // Check if there's a specific issue requested via query param (from archive page)
       const issueIdParam = params.get("issueId");
-      const storedId = typeof window !== "undefined" ? localStorage.getItem("selectedIssueId") : null;
-      const idToUse = issueIdParam || storedId;
-      if (idToUse) {
-        const d = await getIssue(idToUse);
+      
+      if (issueIdParam) {
+        // Only use query param when explicitly provided (e.g., from archive)
+        const d = await getIssue(issueIdParam);
         setIssue(d);
         const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
         setBgUrl(makeAbs(alt));
-        try {
-          if (typeof window !== "undefined") localStorage.setItem("selectedIssueId", String(d.id));
-        } catch {}
         return;
       }
+      
+      // Always fetch and show the latest published issue
       const published = await getPublishedIssues();
       const pick = (() => {
         const arr = Array.isArray(published) ? published : [];
@@ -250,20 +250,15 @@ function HomeInner() {
           .sort((a, b) => b.ts - a.ts)[0]?.it;
         return withDate ?? arr.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
       })();
+      
       if (pick) {
         const d = await getIssue(pick.id);
         setIssue(d);
         const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
         setBgUrl(makeAbs(alt));
-        try {
-          if (typeof window !== "undefined") localStorage.setItem("selectedIssueId", String(d.id));
-        } catch {}
       } else {
         setIssue(null);
         setBgUrl("/cover.jpg");
-        try {
-          if (typeof window !== "undefined") localStorage.removeItem("selectedIssueId");
-        } catch {}
       }
     };
     run();
