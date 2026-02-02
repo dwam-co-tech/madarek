@@ -47,6 +47,7 @@ function ManageArticlePageInner() {
   const [toast, setToast] = React.useState<string | null>(null);
   const [featuredImageFile, setFeaturedImageFile] = React.useState<File | null>(null);
   const [featuredPreview, setFeaturedPreview] = React.useState<string | null>(null);
+  const [pdfFile, setPdfFile] = React.useState<File | null>(null);
   type RefItem = { url: string; originIndex?: number };
   const [referencesItems, setReferencesItems] = React.useState<RefItem[]>([]);
   const [removedIndices, setRemovedIndices] = React.useState<number[]>([]);
@@ -100,7 +101,7 @@ function ManageArticlePageInner() {
     if (featuredPreview) {
       try {
         URL.revokeObjectURL(featuredPreview);
-      } catch {}
+      } catch { }
     }
     if (file) {
       const url = URL.createObjectURL(file);
@@ -115,10 +116,15 @@ function ManageArticlePageInner() {
       if (featuredPreview) {
         try {
           URL.revokeObjectURL(featuredPreview);
-        } catch {}
+        } catch { }
       }
     };
   }, [featuredPreview]);
+
+  const onPickPdf: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    setPdfFile(file);
+  };
 
   const save = async () => {
     if (!articleId) return;
@@ -139,6 +145,7 @@ function ManageArticlePageInner() {
         className: form.className,
         content: form.content,
         featured_image: featuredImageFile ?? undefined,
+        pdf_file: pdfFile ?? undefined,
       };
       const res = await updateArticle(articleId, payload);
       const updated = res.article;
@@ -152,8 +159,8 @@ function ManageArticlePageInner() {
       const toastMsg = created
         ? 'تم إنشاء المقالة بنجاح'
         : updatedMsg
-        ? 'تم تحديث المقالة بنجاح'
-        : res.message || 'تم حفظ المقال بنجاح';
+          ? 'تم تحديث المقالة بنجاح'
+          : res.message || 'تم حفظ المقال بنجاح';
       setToast(toastMsg);
       window.setTimeout(() => setToast(null), 3000);
     } catch (err) {
@@ -227,6 +234,26 @@ function ManageArticlePageInner() {
                   className={styles.input}
                   onChange={onPickImage}
                 />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>ملف PDF</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className={styles.input}
+                  onChange={onPickPdf}
+                />
+                {(pdfFile || article.pdf_file) && (
+                  <div className={styles.metaValue} style={{ marginTop: '0.5rem' }}>
+                    {pdfFile ? (
+                      <span>تم اختيار: {pdfFile.name}</span>
+                    ) : article.pdf_file ? (
+                      <a href={article.pdf_file} target="_blank" rel="noopener noreferrer">
+                        عرض ملف PDF الحالي
+                      </a>
+                    ) : null}
+                  </div>
+                )}
               </div>
               {/* <div className={styles.fieldRow}>
                 <div className={styles.field}>
@@ -345,12 +372,12 @@ function ManageArticlePageInner() {
                   <button
                     type="button"
                     className={styles.saveBtn}
-                  onClick={() => {
-                    const v = refLinkInput.trim();
-                    if (!v) return;
-                    setReferencesItems((prev) => [...prev, { url: v }]);
-                    setRefLinkInput('');
-                  }}
+                    onClick={() => {
+                      const v = refLinkInput.trim();
+                      if (!v) return;
+                      setReferencesItems((prev) => [...prev, { url: v }]);
+                      setRefLinkInput('');
+                    }}
                   >
                     إضافة رابط
                   </button>

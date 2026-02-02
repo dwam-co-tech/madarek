@@ -43,6 +43,7 @@ export type UpdateArticlePayload = {
   status?: string;
   className?: string;
   featured_image?: File;
+  pdf_file?: File;
 };
 
 export type UpdateArticleResponse = {

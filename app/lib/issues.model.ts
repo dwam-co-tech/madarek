@@ -50,6 +50,7 @@ export type ArticleDTO = {
   content?: string | null;
   author_name?: string | null;
   featured_image?: string | null;
+  pdf_file?: string | null;
   gregorian_date?: string | null;
   hijri_date?: string | null;
   references?: string[];

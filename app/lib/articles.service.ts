@@ -76,7 +76,8 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
     }
     return { res, data };
   };
-  const hasFile = typeof payload.featured_image !== 'undefined' && payload.featured_image !== null;
+  const hasFile = (typeof payload.featured_image !== 'undefined' && payload.featured_image !== null) ||
+    (typeof payload.pdf_file !== 'undefined' && payload.pdf_file !== null);
   if (hasFile) {
     const makeForm = () => {
       const form = new FormData();
@@ -103,6 +104,7 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
       if (payload.className) form.append('className', payload.className);
       if (typeof payload.content === 'string') form.append('content', payload.content);
       if (payload.featured_image) form.append('featured_image', payload.featured_image);
+      if (payload.pdf_file) form.append('pdf_file', payload.pdf_file);
       return form;
     };
     const attempts = [

@@ -240,6 +240,27 @@ function SectionPageContent() {
                                                     {a.content ? (
                                                         <div dangerouslySetInnerHTML={{ __html: a.content }} />
                                                     ) : null}
+                                                    {a.pdf_file && (
+                                                        <div className={styles.paperSources} style={{ textAlign: 'center', marginTop: '2rem' }}>
+                                                            <a
+                                                                href={a.pdf_file}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className={styles.pageMeta}
+                                                                style={{
+                                                                    display: 'inline-block',
+                                                                    padding: '0.75rem 1.5rem',
+                                                                    background: 'var(--color-accent, #b8860b)',
+                                                                    color: '#fff',
+                                                                    borderRadius: '0.5rem',
+                                                                    textDecoration: 'none',
+                                                                    fontWeight: 'bold'
+                                                                }}
+                                                            >
+                                                                📄 تحميل ملف PDF
+                                                            </a>
+                                                        </div>
+                                                    )}
                                                     {(Array.isArray(a.references) && a.references.length) ||
                                                         (a as Record<string, unknown>).references_tmp ? (
                                                         <div className={styles.paperSources}>
