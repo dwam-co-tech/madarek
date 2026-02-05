@@ -134,7 +134,7 @@ function IssuesContent() {
   React.useEffect(() => {
     if (shouldToast) {
       const t = setTimeout(() => {
-        router.replace('/dashboard/issues');
+        router.replace('/md-dash/issues');
       }, 1000);
       return () => clearTimeout(t);
     }
@@ -526,7 +526,7 @@ function IssuesContent() {
                 </td>
                 <td className={styles.td}>
                   <div className={styles.actions}>
-                    <Link href={`/dashboard/articles?id=${issue.id}`} className={styles.iconBtn}>
+                    <Link href={`/md-dash/articles?id=${issue.id}`} className={styles.iconBtn}>
                       <FileText size={18} />
                       <span className={styles.iconLabel}>إدارة المقالات</span>
                     </Link>
@@ -577,7 +577,7 @@ function IssuesContent() {
               <span>{issue.published ? 'منشور' : 'مسودة'}</span>
             </div>
             <div className={styles.cardActions}>
-              <Link href={`/dashboard/articles?id=${issue.id}`} className={styles.iconBtn} title="إدارة المقالات">
+              <Link href={`/md-dash/articles?id=${issue.id}`} className={styles.iconBtn} title="إدارة المقالات">
                 <FileText size={18} />
               </Link>
               <button className={styles.iconBtn} onClick={() => openEditModal(issue)} title="تعديل العدد">

@@ -34,7 +34,7 @@ function ArticlesAdminPageInner() {
   const noIssueId = !issueIdParam;
   React.useEffect(() => {
     if (noIssueId) {
-      router.replace('/dashboard/issues?from=articles');
+      router.replace('/md-dash/issues?from=articles');
     }
   }, [noIssueId, router]);
 
@@ -78,7 +78,7 @@ function ArticlesAdminPageInner() {
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>إدارة المقالات</h1>
         <div className={styles.headerActions}>
-          <Link href="/dashboard/issues" className={styles.backBtn}>
+          <Link href="/md-dash/issues" className={styles.backBtn}>
             العودة للأعداد
           </Link>
         </div>
@@ -111,7 +111,7 @@ function ArticlesAdminPageInner() {
                 <td className={styles.td}>{a.views}</td>
                 <td className={`${styles.td} ${styles.actionsCol}`.trim()}>
                   <Link
-                    href={`/dashboard/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
+                    href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
                     className={styles.actionBtn}
                   >
                     إدارة المحتوى
@@ -132,7 +132,7 @@ function ArticlesAdminPageInner() {
             </div>
             <div className={styles.cardActions}>
               <Link
-                href={`/dashboard/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
+                href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
                 className={styles.cardActionBtn}
               >
                 إدارة المحتوى

@@ -199,7 +199,7 @@ function ManageArticlePageInner() {
   };
 
   const backHref =
-    issueId && issueId.trim() !== '' ? `/dashboard/articles?id=${encodeURIComponent(issueId)}` : '/dashboard/articles';
+    issueId && issueId.trim() !== '' ? `/md-dash/articles?id=${encodeURIComponent(issueId)}` : '/md-dash/articles';
 
   return (
     <div className={styles.page}>

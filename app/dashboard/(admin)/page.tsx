@@ -46,19 +46,19 @@
        </div>
  
        <div className={styles.quickActions}>
-         <Link href="/dashboard/issues" className={styles.actionBtn} aria-label="إدارة الأعداد">
+        <Link href="/md-dash/issues" className={styles.actionBtn} aria-label="إدارة الأعداد">
            <FileText size={18} />
            <span>إدارة الأعداد</span>
          </Link>
-         <Link href="/dashboard/articles" className={styles.actionBtn} aria-label="إدارة المقالات">
+        <Link href="/md-dash/articles" className={styles.actionBtn} aria-label="إدارة المقالات">
            <FileText size={18} />
            <span>إدارة المقالات</span>
          </Link>
-         <Link href="/dashboard/admins" className={styles.actionBtn} aria-label="إدارة المشرفين">
+        <Link href="/md-dash/admins" className={styles.actionBtn} aria-label="إدارة المشرفين">
            <Users size={18} />
            <span>إدارة المشرفين</span>
          </Link>
-         <Link href="/dashboard/backup" className={styles.actionBtn} aria-label="النسخ الاحتياطي">
+        <Link href="/md-dash/backup" className={styles.actionBtn} aria-label="النسخ الاحتياطي">
            <Database size={18} />
            <span>النسخ الاحتياطي</span>
          </Link>

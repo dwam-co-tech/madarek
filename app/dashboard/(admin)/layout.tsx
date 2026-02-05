@@ -32,7 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   })();
   const isAuthor = authUser?.role === 'author';
   const allowedAuthorPaths = useMemo(
-    () => new Set(['/dashboard/issues', '/dashboard/articles', '/dashboard/articles/manage', '/dashboard/account-settings']),
+    () => new Set(['/md-dash/issues', '/md-dash/articles', '/md-dash/articles/manage', '/md-dash/account-settings']),
     []
   );
 
@@ -40,11 +40,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const token = document.cookie.split('; ').find(row => row.startsWith('admin_token='));
     if (!token) {
-      router.push('/dashboard/login');
+      router.push('/md-dash/login');
       return;
     }
     if (isAuthor && !allowedAuthorPaths.has(pathname)) {
-      router.replace('/dashboard/issues');
+      router.replace('/md-dash/issues');
     }
   }, [router, pathname, isAuthor, allowedAuthorPaths]);
 
@@ -52,16 +52,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     try {
       await logout();
     } catch { }
-    router.push('/dashboard/login');
+    router.push('/md-dash/login');
   };
 
   const menuItems = [
-    { name: 'الرئيسية', icon: LayoutDashboard, path: '/dashboard' },
-    { name: 'إدارة الأعداد', icon: FileText, path: '/dashboard/issues' },
-    { name: 'إدارة المقالات', icon: FileText, path: '/dashboard/articles' },
-    { name: 'إدارة المشرفين', icon: Users, path: '/dashboard/admins' },
-    { name: 'النسخ الاحتياطي', icon: Database, path: '/dashboard/backup' },
-    { name: 'إعدادات الحساب', icon: Settings, path: '/dashboard/account-settings' },
+    { name: 'الرئيسية', icon: LayoutDashboard, path: '/md-dash' },
+    { name: 'إدارة الأعداد', icon: FileText, path: '/md-dash/issues' },
+    { name: 'إدارة المقالات', icon: FileText, path: '/md-dash/articles' },
+    { name: 'إدارة المشرفين', icon: Users, path: '/md-dash/admins' },
+    { name: 'النسخ الاحتياطي', icon: Database, path: '/md-dash/backup' },
+    { name: 'إعدادات الحساب', icon: Settings, path: '/md-dash/account-settings' },
   ];
   const visibleMenuItems = isAuthor ? menuItems.filter((it) => allowedAuthorPaths.has(it.path)) : menuItems;
 
