@@ -46,3 +46,36 @@ export type DeleteBackupResponse = {
   success: boolean;
   message: string;
 };
+
+export type BackupDiagnosticsResponse = {
+  os_family: string;
+  php_version: string;
+  mysqldump: {
+    dump_binary_path: string | null;
+    looks_windows_path: boolean;
+    invalid_for_os: boolean;
+    found_in_dump_binary_path: boolean | null;
+    shell_exec_enabled: boolean;
+    found_in_path: boolean | null;
+    which: string | null;
+  };
+  queue: {
+    default: string;
+    driver: string | null;
+    is_sync: boolean;
+    pending_jobs_count: number | null;
+    oldest_pending_job_age_seconds: number | null;
+    failed_jobs_count: number | null;
+  };
+  scheduler: {
+    last_tick: string | null;
+    age_seconds: number | null;
+    ok: boolean | null;
+  };
+  latest_create: {
+    status: string;
+    message: string;
+    created_at: string;
+  } | null;
+  manual_backup_executes_immediately: boolean;
+};

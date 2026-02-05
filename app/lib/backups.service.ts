@@ -1,6 +1,6 @@
 import { buildApiUrl } from './api';
 import { getAuthToken } from './auth.service';
-import type { CreateBackupPayload, CreateBackupResponse, UploadBackupResponse, GetBackupsResponse, RestoreBackupResponse, GetBackupHistoryResponse, DeleteBackupResponse } from './backups.model';
+import type { CreateBackupPayload, CreateBackupResponse, UploadBackupResponse, GetBackupsResponse, RestoreBackupResponse, GetBackupHistoryResponse, DeleteBackupResponse, BackupDiagnosticsResponse } from './backups.model';
 
 export async function createBackup(payload: CreateBackupPayload): Promise<CreateBackupResponse> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -162,4 +162,25 @@ export async function getBackupHistory(): Promise<GetBackupHistoryResponse> {
     throw new Error(msg);
   }
   return data as GetBackupHistoryResponse;
+}
+
+export async function getBackupDiagnostics(): Promise<BackupDiagnosticsResponse> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const token = getAuthToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(buildApiUrl('/api/backups/diagnostics'), {
+    method: 'GET',
+    headers,
+  });
+  const data = (await res.json()) as unknown;
+  if (!res.ok || typeof data !== 'object' || data === null) {
+    let msg = 'فشل جلب بيانات التشخيص';
+    if (typeof data === 'object' && data !== null) {
+      const maybe = data as { message?: unknown; error?: unknown };
+      if (typeof maybe.message === 'string') msg = maybe.message;
+      else if (typeof maybe.error === 'string') msg = maybe.error;
+    }
+    throw new Error(msg);
+  }
+  return data as BackupDiagnosticsResponse;
 }

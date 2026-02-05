@@ -16,8 +16,8 @@ import {
 import styles from './backup.module.css';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import SearchFilter, { FieldDef, SearchQuery } from '@/components/SearchFilter';
-import { createBackup as createBackupApi, uploadBackup as uploadBackupApi, getBackups, restoreBackup as restoreBackupApi, downloadBackup as downloadBackupApi, getBackupHistory, deleteBackup as deleteBackupApi } from '@/app/lib/backups.service';
-import type { CreateBackupResponse, UploadBackupResponse, BackupDTO, BackupHistoryItemDTO, DeleteBackupResponse } from '@/app/lib/backups.model';
+import { createBackup as createBackupApi, uploadBackup as uploadBackupApi, getBackups, restoreBackup as restoreBackupApi, downloadBackup as downloadBackupApi, getBackupHistory, deleteBackup as deleteBackupApi, getBackupDiagnostics } from '@/app/lib/backups.service';
+import type { CreateBackupResponse, UploadBackupResponse, BackupDTO, BackupHistoryItemDTO, DeleteBackupResponse, BackupDiagnosticsResponse } from '@/app/lib/backups.model';
 import { buildApiUrl } from '@/app/lib/api';
 
 type BackupItem = {
@@ -45,6 +45,8 @@ export default function BackupPage() {
   const [query, setQuery] = useState<SearchQuery>({});
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<BackupHistoryItemDTO[]>([]);
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<BackupDiagnosticsResponse | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<BackupItem | undefined>();
   const [createMonitor, setCreateMonitor] = useState<CreateMonitor | null>(null);
@@ -137,6 +139,13 @@ export default function BackupPage() {
   }, []);
 
   const translateMessage = React.useCallback((msg: string) => {
+    const m = msg.toLowerCase();
+    if (
+      (m.includes('mysqldump') && (m.includes('no such file') || m.includes('command not found'))) ||
+      (m.includes('exitcode 127') && m.includes('command not found'))
+    ) {
+      return 'فشل تفريغ قاعدة البيانات: mysqldump غير موجود/مساره خطأ. على Linux ثبّت mysql-client أو اضبط MYSQL_DUMP_BINARY_PATH.';
+    }
     if (msg.includes('Backup process has been queued') && msg.includes('background')) {
       return 'تم جدولة عملية النسخ الاحتياطي وستعمل في الخلفية.';
     }
@@ -295,6 +304,22 @@ export default function BackupPage() {
         await refreshHistory();
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'فشل جلب سجل العمليات';
+        showToast(msg);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  };
+
+  const openDiagnostics = () => {
+    setIsDiagnosticsOpen(true);
+    setIsLoading(true);
+    (async () => {
+      try {
+        const data = await getBackupDiagnostics();
+        setDiagnostics(data);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'فشل جلب بيانات التشخيص';
         showToast(msg);
       } finally {
         setIsLoading(false);
@@ -465,6 +490,10 @@ export default function BackupPage() {
             <button className={`${styles.actionBtn} ${styles.historyBtn}`} onClick={openHistory}>
               <Clock size={18} />
               <span>سجل التحميل</span>
+            </button>
+            <button className={`${styles.actionBtn} ${styles.historyBtn}`} onClick={openDiagnostics}>
+              <Info size={18} />
+              <span>تشخيص</span>
             </button>
           </div>
         </div>
@@ -683,6 +712,125 @@ export default function BackupPage() {
             </div>
             <div className={styles.modalActions}>
               <button className={styles.cancelBtn} onClick={() => setIsHistoryOpen(false)}>
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDiagnosticsOpen && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true">
+          <div className={`${styles.modal} ${styles.historyModal}`}>
+            <div className={styles.modalTitle}>تشخيص النسخ الاحتياطي</div>
+            <div className={styles.modalBody}>
+              {!diagnostics ? (
+                <div className={styles.hint}>جاري تحميل بيانات التشخيص...</div>
+              ) : (
+                <div className={styles.historyList}>
+                  <div className={styles.historyItem}>
+                    <div className={styles.historyHeader}>
+                      <span className={`${styles.statusBadge} ${styles.historyTypeCreate}`}>التنفيذ</span>
+                    </div>
+                    <div className={styles.historyMessage}>
+                      {diagnostics.manual_backup_executes_immediately
+                        ? 'النسخ اليدوي يتنفذ فورًا (Queue=sync).'
+                        : 'النسخ اليدوي بيتسجل queued ثم يحتاج Queue Worker لتنفيذه.'}
+                    </div>
+                  </div>
+
+                  <div className={styles.historyItem}>
+                    <div className={styles.historyHeader}>
+                      <span className={`${styles.statusBadge} ${styles.historyTypeCreate}`}>mysqldump</span>
+                      <span
+                        className={`${styles.statusBadge} ${diagnostics.mysqldump.invalid_for_os || diagnostics.mysqldump.found_in_path === false
+                            ? styles.statusFailed
+                            : styles.statusSuccess
+                          }`}
+                      >
+                        {diagnostics.mysqldump.invalid_for_os || diagnostics.mysqldump.found_in_path === false ? 'مشكلة محتملة' : 'سليم'}
+                      </span>
+                    </div>
+                    <div className={styles.historyMessage}>
+                      {diagnostics.mysqldump.invalid_for_os
+                        ? `مسار dump_binary_path مضبوط على Windows (${diagnostics.mysqldump.dump_binary_path}) بينما السيرفر ${diagnostics.os_family}.`
+                        : diagnostics.mysqldump.found_in_path === false && !diagnostics.mysqldump.dump_binary_path
+                          ? 'mysqldump غير موجود في PATH على السيرفر (غالبًا mysql-client غير مُثبت).'
+                          : diagnostics.mysqldump.dump_binary_path
+                            ? `dump_binary_path=${diagnostics.mysqldump.dump_binary_path}`
+                            : diagnostics.mysqldump.which
+                              ? `تم العثور على mysqldump: ${diagnostics.mysqldump.which}`
+                              : 'لا توجد معلومات كافية عن mysqldump.'}
+                    </div>
+                  </div>
+
+                  <div className={styles.historyItem}>
+                    <div className={styles.historyHeader}>
+                      <span className={`${styles.statusBadge} ${styles.historyTypeCreate}`}>Queue</span>
+                      <span
+                        className={`${styles.statusBadge} ${diagnostics.queue.is_sync ? styles.statusSuccess : styles.statusQueued
+                          }`}
+                      >
+                        {diagnostics.queue.is_sync ? 'sync' : 'async'}
+                      </span>
+                    </div>
+                    <div className={styles.historyMessage}>
+                      {`driver=${diagnostics.queue.driver ?? '—'} | pending=${diagnostics.queue.pending_jobs_count ?? '—'} | failed=${diagnostics.queue.failed_jobs_count ?? '—'}`}
+                      {diagnostics.queue.oldest_pending_job_age_seconds != null
+                        ? ` | أقدم job منذ ${Math.round(diagnostics.queue.oldest_pending_job_age_seconds / 60)} دقيقة`
+                        : ''}
+                    </div>
+                  </div>
+
+                  <div className={styles.historyItem}>
+                    <div className={styles.historyHeader}>
+                      <span className={`${styles.statusBadge} ${styles.historyTypeCreate}`}>Cron/Scheduler</span>
+                      <span
+                        className={`${styles.statusBadge} ${diagnostics.scheduler.ok === false ? styles.statusFailed : styles.statusSuccess
+                          }`}
+                      >
+                        {diagnostics.scheduler.ok === false ? 'غير نشط' : 'نشط'}
+                      </span>
+                    </div>
+                    <div className={styles.historyMessage}>
+                      {diagnostics.scheduler.last_tick
+                        ? `آخر tick: ${new Date(diagnostics.scheduler.last_tick).toLocaleString('ar-EG', { hour12: false })}`
+                        : 'لم يتم رصد tick للـ Scheduler بعد (قد يكون cron غير مُفعّل).'}
+                    </div>
+                  </div>
+
+                  {diagnostics.latest_create && (
+                    <div className={styles.historyItem}>
+                      <div className={styles.historyHeader}>
+                        <span className={`${styles.statusBadge} ${styles.historyTypeCreate}`}>آخر محاولة إنشاء</span>
+                        <span
+                          className={`${styles.statusBadge} ${diagnostics.latest_create.status === 'success'
+                              ? styles.statusSuccess
+                              : diagnostics.latest_create.status === 'failed'
+                                ? styles.statusFailed
+                                : styles.statusQueued
+                            }`}
+                        >
+                          {diagnostics.latest_create.status}
+                        </span>
+                      </div>
+                      <div className={styles.historyMessage}>{translateMessage(diagnostics.latest_create.message)}</div>
+                      <div className={styles.historyMeta}>
+                        <span>{new Date(diagnostics.latest_create.created_at).toLocaleString('ar-EG', { hour12: false })}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => {
+                  setIsDiagnosticsOpen(false);
+                  setDiagnostics(null);
+                }}
+              >
                 إغلاق
               </button>
             </div>
