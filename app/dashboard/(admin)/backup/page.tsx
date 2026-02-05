@@ -29,6 +29,13 @@ type BackupItem = {
   href?: string;
 };
 
+type CreateMonitor = {
+  startedAtMs: number;
+  status: 'queued' | 'success' | 'failed';
+  lastMessage?: string;
+  warnedStuck?: boolean;
+};
+
 export default function BackupPage() {
   const [backups, setBackups] = useState<BackupItem[]>([]);
   const [toast, setToast] = useState<string | undefined>();
@@ -40,6 +47,7 @@ export default function BackupPage() {
   const [history, setHistory] = useState<BackupHistoryItemDTO[]>([]);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<BackupItem | undefined>();
+  const [createMonitor, setCreateMonitor] = useState<CreateMonitor | null>(null);
 
   const fields = React.useMemo<FieldDef[]>(
     () => [
@@ -123,12 +131,12 @@ export default function BackupPage() {
 
   const countText = useMemo(() => `عدد النسخ: ${backups.length}`, [backups.length]);
 
-  const showToast = (msg: string) => {
+  const showToast = React.useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(undefined), 3800);
-  };
+  }, []);
 
-  const translateMessage = (msg: string) => {
+  const translateMessage = React.useCallback((msg: string) => {
     if (msg.includes('Backup process has been queued') && msg.includes('background')) {
       return 'تم جدولة عملية النسخ الاحتياطي وستعمل في الخلفية.';
     }
@@ -154,30 +162,66 @@ export default function BackupPage() {
       return 'ملف تفريغ SQL غير موجود في الأرشيف.';
     }
     return msg;
-  };
+  }, []);
+
+  const toKBFromHuman = React.useCallback((s: string): number => {
+    const m = s.trim().match(/^([\d.]+)\s*([BKMGTP])$/i);
+    if (!m) return Number.NaN;
+    const val = Number.parseFloat(m[1]);
+    const unit = m[2].toUpperCase();
+    if (Number.isNaN(val)) return Number.NaN;
+    if (unit === 'B') return Number((val / 1024).toFixed(2));
+    if (unit === 'K') return Number(val.toFixed(2));
+    if (unit === 'M') return Number((val * 1024).toFixed(2));
+    if (unit === 'G') return Number((val * 1024 * 1024).toFixed(2));
+    if (unit === 'T') return Number((val * 1024 * 1024 * 1024).toFixed(2));
+    if (unit === 'P') return Number((val * 1024 * 1024 * 1024 * 1024).toFixed(2));
+    return Number.NaN;
+  }, []);
+
+  const parseLaravelDateToMs = React.useCallback((value: string | null | undefined): number => {
+    if (!value) return Number.NaN;
+    const ms = new Date(value.replace(' ', 'T')).getTime();
+    return ms;
+  }, []);
+
+  const refreshBackups = React.useCallback(async () => {
+    const list = await getBackups();
+    const items: BackupItem[] = (list as BackupDTO[]).map((b) => ({
+      id: `${b.file_name}_${b.created_at}`,
+      fileName: b.file_name,
+      sizeKB: toKBFromHuman(b.file_size),
+      createdAt: new Date(b.created_at.replace(' ', 'T')).toISOString(),
+      status: 'done',
+      href: b.download_link,
+    }));
+    setBackups(items);
+  }, [toKBFromHuman]);
+
+  const refreshHistory = React.useCallback(async () => {
+    const items = await getBackupHistory();
+    setHistory(items);
+    return items;
+  }, []);
 
   React.useEffect(() => {
     (async () => {
       setIsLoading(true);
       try {
-        const list = await getBackups();
-        const toKB = (s: string) => {
-          const m = s.trim().match(/^([\d.]+)\s*([KMG])$/i);
-          if (!m) return Number.NaN;
-          const val = Number.parseFloat(m[1]);
-          const unit = m[2].toUpperCase();
-          const kb = unit === 'K' ? val : unit === 'M' ? val * 1024 : unit === 'G' ? val * 1024 * 1024 : val;
-          return Number(kb.toFixed(2));
-        };
-        const items: BackupItem[] = (list as BackupDTO[]).map((b) => ({
-          id: `${b.file_name}_${b.created_at}`,
-          fileName: b.file_name,
-          sizeKB: toKB(b.file_size),
-          createdAt: new Date(b.created_at.replace(' ', 'T')).toISOString(),
-          status: 'done',
-          href: b.download_link,
-        }));
-        setBackups(items);
+        await refreshBackups();
+        const hist = await refreshHistory();
+        const latestCreate = hist
+          .filter((it) => it.type === 'create')
+          .sort((a, b) => parseLaravelDateToMs(b.created_at) - parseLaravelDateToMs(a.created_at))[0];
+        if (latestCreate) {
+          const st = String(latestCreate.status || '').toLowerCase();
+          if (st === 'queued') {
+            const startedAtMs = parseLaravelDateToMs(latestCreate.created_at);
+            if (!Number.isNaN(startedAtMs) && Date.now() - startedAtMs < 1800000) {
+              setCreateMonitor({ startedAtMs, status: 'queued' });
+            }
+          }
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'فشل جلب النسخ الاحتياطية';
         showToast(msg);
@@ -185,15 +229,70 @@ export default function BackupPage() {
         setIsLoading(false);
       }
     })();
-  }, []);
+  }, [parseLaravelDateToMs, refreshBackups, refreshHistory, showToast]);
+
+  React.useEffect(() => {
+    if (!createMonitor || createMonitor.status !== 'queued') return;
+    let alive = true;
+    const startedAtMs = createMonitor.startedAtMs;
+    const intervalMs = 5000;
+    const stuckWarnAfterMs = 120000;
+
+    const tick = async () => {
+      if (!alive) return;
+      const [histRes, backupsRes] = await Promise.allSettled([refreshHistory(), refreshBackups()]);
+      if (!alive) return;
+
+      if (histRes.status === 'fulfilled') {
+        const items = histRes.value;
+        const startedWindowMs = startedAtMs - 3000;
+        const latestCreate = items
+          .filter((it) => it.type === 'create' && parseLaravelDateToMs(it.created_at) >= startedWindowMs)
+          .sort((a, b) => parseLaravelDateToMs(b.created_at) - parseLaravelDateToMs(a.created_at))[0];
+
+        if (latestCreate) {
+          const st = String(latestCreate.status || '').toLowerCase();
+          if (st === 'success' || st === 'failed') {
+            const translated = translateMessage(latestCreate.message || '');
+            setCreateMonitor({ startedAtMs, status: st, lastMessage: translated });
+            if (translated) showToast(translated);
+            return;
+          }
+        }
+      }
+
+      if (backupsRes.status === 'rejected') {
+        const msg = backupsRes.reason instanceof Error ? backupsRes.reason.message : 'فشل تحديث قائمة النسخ';
+        showToast(msg);
+      }
+
+      if (Date.now() - startedAtMs > stuckWarnAfterMs) {
+        let shouldToast = false;
+        setCreateMonitor((prev) => {
+          if (!prev || prev.status !== 'queued' || prev.warnedStuck) return prev;
+          shouldToast = true;
+          return { ...prev, warnedStuck: true };
+        });
+        if (shouldToast) {
+          showToast('النسخ ما زال قيد التنفيذ. لو ظلّ عالقًا تأكد من تشغيل الـ Queue Worker على السيرفر.');
+        }
+      }
+    };
+
+    tick();
+    const t = window.setInterval(tick, intervalMs);
+    return () => {
+      alive = false;
+      window.clearInterval(t);
+    };
+  }, [createMonitor, parseLaravelDateToMs, refreshBackups, refreshHistory, showToast, translateMessage]);
 
   const openHistory = () => {
     setIsHistoryOpen(true);
     setIsLoading(true);
     (async () => {
       try {
-        const items = await getBackupHistory();
-        setHistory(items);
+        await refreshHistory();
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'فشل جلب سجل العمليات';
         showToast(msg);
@@ -205,11 +304,13 @@ export default function BackupPage() {
 
   const createBackup = async () => {
     setIsLoading(true);
+    setCreateMonitor({ startedAtMs: Date.now(), status: 'queued' });
     try {
       const res: CreateBackupResponse = await createBackupApi({ mode: 'full' });
       const msg = res.message ? translateMessage(res.message) : 'تم إنشاء النسخة الاحتياطية بنجاح';
       showToast(msg);
     } catch (err) {
+      setCreateMonitor(null);
       const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء النسخة الاحتياطية';
       showToast(msg);
     } finally {
@@ -335,6 +436,22 @@ export default function BackupPage() {
               <CheckCircle2 size={16} />
               <span>نسخة تلقائية قبل الاسترجاع</span>
             </div>
+            {createMonitor?.status === 'queued' ? (
+              <div className={`${styles.badge} ${styles.badgeMuted}`}>
+                <Clock size={16} />
+                <span>إنشاء نسخة: جارٍ التنفيذ</span>
+              </div>
+            ) : createMonitor?.status === 'success' ? (
+              <div className={`${styles.badge} ${styles.badgeSuccess}`}>
+                <CheckCircle2 size={16} />
+                <span>إنشاء نسخة: تم بنجاح</span>
+              </div>
+            ) : createMonitor?.status === 'failed' ? (
+              <div className={styles.badge}>
+                <Info size={16} />
+                <span>إنشاء نسخة: فشل</span>
+              </div>
+            ) : null}
           </div>
           <div className={styles.actionsBar}>
             <button className={`${styles.actionBtn} ${styles.createBtn}`} onClick={createBackup}>
@@ -388,9 +505,8 @@ export default function BackupPage() {
                 <td className={styles.td}>KB {b.sizeKB}</td>
                 <td className={styles.td}>
                   <span
-                    className={`${styles.statusBadge} ${
-                      b.status === 'done' ? styles.statusDone : b.status === 'restoring' ? styles.statusRestoring : styles.statusFailed
-                    }`}
+                    className={`${styles.statusBadge} ${b.status === 'done' ? styles.statusDone : b.status === 'restoring' ? styles.statusRestoring : styles.statusFailed
+                      }`}
                   >
                     {b.status === 'done' ? (
                       <>
@@ -444,9 +560,8 @@ export default function BackupPage() {
             <div className={styles.cardMeta}>
               <span>KB {b.sizeKB}</span>
               <span
-                className={`${styles.statusBadge} ${
-                  b.status === 'done' ? styles.statusDone : b.status === 'restoring' ? styles.statusRestoring : styles.statusFailed
-                }`}
+                className={`${styles.statusBadge} ${b.status === 'done' ? styles.statusDone : b.status === 'restoring' ? styles.statusRestoring : styles.statusFailed
+                  }`}
               >
                 {b.status === 'done' ? 'متوفرة' : b.status === 'restoring' ? 'جارٍ الاسترجاع' : 'فشل'}
               </span>
@@ -527,45 +642,43 @@ export default function BackupPage() {
             <div className={styles.modalTitle}>سجل التحميل</div>
             <div className={styles.modalBody}>
               <div className={styles.historyList}>
-              {history.map((h) => (
-                <div key={h.id} className={styles.historyItem}>
-                  <div className={styles.historyHeader}>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        h.type === 'restore' ? styles.historyTypeRestore : styles.historyTypeCreate
-                      }`}
-                    >
-                      {h.type === 'restore' ? 'استرجاع' : 'إنشاء'}
-                    </span>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        h.status === 'success'
+                {history.map((h) => (
+                  <div key={h.id} className={styles.historyItem}>
+                    <div className={styles.historyHeader}>
+                      <span
+                        className={`${styles.statusBadge} ${h.type === 'restore' ? styles.historyTypeRestore : styles.historyTypeCreate
+                          }`}
+                      >
+                        {h.type === 'restore' ? 'استرجاع' : 'إنشاء'}
+                      </span>
+                      <span
+                        className={`${styles.statusBadge} ${h.status === 'success'
                           ? styles.statusSuccess
                           : h.status === 'failed'
-                          ? styles.statusFailed
-                          : h.status === 'queued'
-                          ? styles.statusQueued
-                          : styles.statusStarted
-                      }`}
-                    >
-                      {h.status === 'success'
-                        ? 'نجاح'
-                        : h.status === 'failed'
-                        ? 'فشل'
-                        : h.status === 'queued'
-                        ? 'قيد الانتظار'
-                        : 'بدأت العملية'}
-                    </span>
+                            ? styles.statusFailed
+                            : h.status === 'queued'
+                              ? styles.statusQueued
+                              : styles.statusStarted
+                          }`}
+                      >
+                        {h.status === 'success'
+                          ? 'نجاح'
+                          : h.status === 'failed'
+                            ? 'فشل'
+                            : h.status === 'queued'
+                              ? 'قيد الانتظار'
+                              : 'بدأت العملية'}
+                      </span>
+                    </div>
+                    <div className={styles.historyMessage}>{translateMessage(h.message)}</div>
+                    <div className={styles.historyMeta}>
+                      <span>{h.file_name ?? '—'}</span>
+                      <span>{h.file_size ?? ''}</span>
+                      <span>{new Date(h.created_at).toLocaleString('ar-EG', { hour12: false })}</span>
+                      <span>{h.user_id ? `المستخدم #${h.user_id}` : '—'}</span>
+                    </div>
                   </div>
-                  <div className={styles.historyMessage}>{translateMessage(h.message)}</div>
-                  <div className={styles.historyMeta}>
-                    <span>{h.file_name ?? '—'}</span>
-                    <span>{h.file_size ?? ''}</span>
-                    <span>{new Date(h.created_at).toLocaleString('ar-EG', { hour12: false })}</span>
-                    <span>{h.user_id ? `المستخدم #${h.user_id}` : '—'}</span>
-                  </div>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
             <div className={styles.modalActions}>
