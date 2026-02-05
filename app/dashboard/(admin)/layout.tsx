@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Settings,
+  LogOut,
   Menu,
   X,
   BarChart3,
@@ -30,19 +30,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return null;
     }
   })();
+  const isAuthor = authUser?.role === 'author';
+  const allowedAuthorPaths = useMemo(
+    () => new Set(['/dashboard/issues', '/dashboard/articles', '/dashboard/articles/manage', '/dashboard/account-settings']),
+    []
+  );
 
   // Check auth
   useEffect(() => {
     const token = document.cookie.split('; ').find(row => row.startsWith('admin_token='));
     if (!token) {
       router.push('/dashboard/login');
+      return;
     }
-  }, [router]);
+    if (isAuthor && !allowedAuthorPaths.has(pathname)) {
+      router.replace('/dashboard/issues');
+    }
+  }, [router, pathname, isAuthor, allowedAuthorPaths]);
 
   const handleLogout = async () => {
     try {
       await logout();
-    } catch {}
+    } catch { }
     router.push('/dashboard/login');
   };
 
@@ -54,6 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'النسخ الاحتياطي', icon: Database, path: '/dashboard/backup' },
     { name: 'إعدادات الحساب', icon: Settings, path: '/dashboard/account-settings' },
   ];
+  const visibleMenuItems = isAuthor ? menuItems.filter((it) => allowedAuthorPaths.has(it.path)) : menuItems;
 
   return (
     <div className={styles.container}>
@@ -69,19 +79,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* <span>إغلاق</span> */}
         </button>
         <div className={styles.logoArea}>
-          <Image 
-            src="/logo3.png" 
-            alt="مدارك" 
-            width={100} 
-            height={40} 
+          <Image
+            src="/logo3.png"
+            alt="مدارك"
+            width={100}
+            height={40}
             className={styles.logo}
           />
         </div>
-        
+
         <nav className={styles.nav}>
-          {menuItems.map((item) => (
-            <Link 
-              key={item.path} 
+          {visibleMenuItems.map((item) => (
+            <Link
+              key={item.path}
               href={item.path}
               className={`${styles.navLink} ${pathname === item.path ? styles.activeNavLink : ''}`}
             >
@@ -90,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           ))}
         </nav>
-        
+
         <div className={styles.sidebarFooter}>
           <button onClick={handleLogout} className={styles.logoutBtn}>
             <LogOut size={18} />
@@ -123,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
         </header>
-        
+
         <main className={styles.pageContent}>
           {children}
         </main>

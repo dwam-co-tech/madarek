@@ -114,7 +114,7 @@ export default function ArchivePage() {
                 aria-label="ابحث في الأرشيف"
               />
               <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="currentColor" d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5-5-5Zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z" />
+                <path fill="currentColor" d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5-5-5Zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z"/>
               </svg>
             </div>
             <button
@@ -124,7 +124,7 @@ export default function ArchivePage() {
               aria-label="تبديل الترتيب"
             >
               <svg className={styles.sortIcon} viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="currentColor" d="M7 14h10v2H7v-2Zm0-6h10v2H7V8Z" />
+                <path fill="currentColor" d="M7 14h10v2H7v-2Zm0-6h10v2H7V8Z"/>
               </svg>
               <span className={styles.sortLabel}>{sortDesc ? "الأحدث أولاً" : "الأقدم أولاً"}</span>
             </button>

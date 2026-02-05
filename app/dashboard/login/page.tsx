@@ -41,8 +41,12 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      await authLogin(email, password);
-      router.push('/dashboard');
+      const auth = await authLogin(email, password);
+      if (auth.user.role === 'author') {
+        router.push('/dashboard/issues');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: unknown) {
       let message = 'حدث خطأ غير متوقع';
       if (err instanceof Error) {

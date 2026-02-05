@@ -36,9 +36,8 @@ export default function AdminsPage() {
         label: 'الدور',
         type: 'select',
         options: [
-          { label: 'مشرف', value: 'مشرف' },
-          { label: 'مشرف عام', value: 'مشرف عام' },
-          { label: 'محرر', value: 'محرر' },
+          { label: 'ادمن', value: 'ادمن' },
+          { label: 'كاتب', value: 'كاتب' },
         ],
       },
       { key: 'email', label: 'البريد الإلكتروني', type: 'text' },
@@ -48,15 +47,13 @@ export default function AdminsPage() {
   );
 
   const roleLabelFromApi = (role: string): string => {
-    if (role === 'author') return 'محرر';
-    if (role === 'admin') return 'مشرف';
-    if (role === 'super_admin') return 'مشرف عام';
+    if (role === 'author') return 'كاتب';
+    if (role === 'admin') return 'ادمن';
     return role;
   };
   const roleToApi = (label: string): string => {
-    if (label === 'محرر') return 'author';
-    if (label === 'مشرف') return 'admin';
-    if (label === 'مشرف عام') return 'super_admin';
+    if (label === 'كاتب') return 'author';
+    if (label === 'ادمن') return 'admin';
     return label;
   };
 
@@ -154,7 +151,7 @@ export default function AdminsPage() {
         name: form.name ?? '',
         email: form.email ?? '',
         password: form.password ?? '',
-        role: roleToApi(form.role ?? 'مشرف'),
+        role: roleToApi(form.role ?? 'ادمن'),
       };
       if (form.id) {
         const u = await updateUser(form.id, payload);
@@ -338,11 +335,10 @@ export default function AdminsPage() {
                 <label className={styles.label}>الدور</label>
                 <Dropdown
                   options={[
-                    { value: 'مشرف', label: 'مشرف' },
-                    { value: 'مشرف عام', label: 'مشرف عام' },
-                    { value: 'محرر', label: 'محرر' },
+                    { value: 'ادمن', label: 'ادمن' },
+                    { value: 'كاتب', label: 'كاتب' },
                   ]}
-                  value={form.role ?? 'مشرف'}
+                  value={form.role ?? 'ادمن'}
                   onChange={(v) => setForm((f) => ({ ...f, role: v }))}
                   ariaLabel="اختيار الدور"
                 />

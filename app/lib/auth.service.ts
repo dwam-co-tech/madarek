@@ -32,6 +32,7 @@ export function setAuth(auth: AuthResponse) {
     localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
   } catch {}
   document.cookie = 'admin_token=true; path=/; max-age=86400';
+  document.cookie = `admin_role=${encodeURIComponent(auth.user.role)}; path=/; max-age=86400`;
 }
 
 export function getAuthToken(): string | null {
@@ -57,6 +58,7 @@ export function clearAuth() {
     localStorage.removeItem(USER_KEY);
   } catch {}
   document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'admin_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 
 export async function logout(): Promise<LogoutResponse> {
