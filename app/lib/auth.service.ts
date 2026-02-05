@@ -52,6 +52,19 @@ export function getAuthUser(): User | null {
   }
 }
 
+export function setAuthUser(user: User | null) {
+  try {
+    if (user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_KEY);
+    }
+  } catch {}
+  if (user) {
+    document.cookie = `admin_role=${encodeURIComponent(user.role)}; path=/; max-age=86400`;
+  }
+}
+
 export function clearAuth() {
   try {
     localStorage.removeItem(TOKEN_KEY);
