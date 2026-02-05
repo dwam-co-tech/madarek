@@ -160,41 +160,77 @@
 }
 
 .paperSources {
+  margin-top: 22px;
+  padding: 16px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
   font-size: clamp(10px, 1.2vw, 13px);
   color: var(--brown-700);
+  width: 60%;
+}
+
+.paperSources .paperSubtitle {
+  margin: 0 0 10px;
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-weight: 800;
+  color: var(--brown-900);
 }
 
 .paperSources p {
-  margin: 0.4em 0;
+  margin: 0.45em 0;
+  line-height: 1.9;
 }
 
 .paperSources ol {
-  list-style-position: outside;
-  margin: 0.6em 0;
-  padding-inline-start: 1.1em;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .paperSources li {
   text-align: start;
-  margin: 0.4em 0;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(247, 243, 236, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.paperSources li + li {
+  margin-top: 8px;
 }
 
 .paperSources a {
-  display: block;
-  gap: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: var(--brown-800);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: rgba(90, 58, 47, 0.35);
+  text-underline-offset: 3px;
   overflow-wrap: anywhere;
   max-width: 100%;
 }
 
 .paperSources a::before {
-  content: "🔗";
-  font-size: 14px;
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--brown-600);
+  box-shadow: 0 0 0 4px rgba(184, 134, 11, 0.12);
 }
 
 .paperSources a:hover {
   color: var(--brown-900);
+  text-decoration-color: rgba(90, 58, 47, 0.6);
+}
+
+.paperSources a:focus-visible {
+  outline: 2px solid rgba(184, 134, 11, 0.7);
+  outline-offset: 3px;
 }
 
 .paperFooter {

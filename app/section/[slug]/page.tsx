@@ -7,7 +7,7 @@ import styles from "./page.module.css";
 import Subheader from "../../components/Subheader";
 import Subfooter from "../../components/Subfooter";
 import { getIssue, getIssueArticles, getPublishedIssues } from "../../lib/issues.service";
-import type { ArticleDTO, IssueDTO, IssueDetailDTO } from "../../lib/issues.model";
+import type { ArticleDTO, IssueDetailDTO } from "../../lib/issues.model";
 
 // Section configuration - maps URL slug to className and title
 const SECTIONS: Record<string, { className: string; title: string }> = {
@@ -50,7 +50,6 @@ function SectionPageContent() {
     const [issue, setIssue] = useState<IssueDetailDTO | null>(null);
     const [issueId, setIssueId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [notFound, setNotFound] = useState(false);
 
     // Section title and info
     const issueTitle = section?.title ?? "القسم";
@@ -92,12 +91,6 @@ function SectionPageContent() {
 
     // Determine issueId from URL param, localStorage, or fetch latest
     useEffect(() => {
-        if (!section) {
-            setNotFound(true);
-            setLoading(false);
-            return;
-        }
-
         const determineIssueId = async () => {
             // Priority 1: URL query param
             if (issueIdParam) {
@@ -184,7 +177,7 @@ function SectionPageContent() {
     }, [issueId, section]);
 
     // Handle 404 for invalid section
-    if (notFound) {
+    if (!section) {
         return (
             <main className={styles.stage}>
                 <div className={styles.notFound}>
@@ -240,7 +233,7 @@ function SectionPageContent() {
                                                     {a.content ? (
                                                         <div dangerouslySetInnerHTML={{ __html: a.content }} />
                                                     ) : null}
-                                                    {a.pdf_file && (
+                                                    {/* {a.pdf_file && (
                                                         <div className={styles.paperSources} style={{ textAlign: 'center', marginTop: '2rem' }}>
                                                             <a
                                                                 href={a.pdf_file}
@@ -260,28 +253,42 @@ function SectionPageContent() {
                                                                 📄 تحميل ملف PDF
                                                             </a>
                                                         </div>
-                                                    )}
+                                                    )} */}
                                                     {(Array.isArray(a.references) && a.references.length) ||
                                                         (a as Record<string, unknown>).references_tmp ? (
                                                         <div className={styles.paperSources}>
                                                             <h3 className={styles.paperSubtitle}>المراجع</h3>
                                                             {Array.isArray(a.references) && a.references.length ? (
                                                                 <ol>
-                                                                    {a.references.map((lnk, idx) => (
-                                                                        <li key={`${lnk}-${idx}`}>
-                                                                            {/^https?:\/\//i.test((lnk ?? "").trim()) ? (
-                                                                                <a
-                                                                                    href={lnk}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                >
-                                                                                    {lnk}
-                                                                                </a>
-                                                                            ) : (
-                                                                                <span>{lnk}</span>
-                                                                            )}
-                                                                        </li>
-                                                                    ))}
+                                                                    {a.references.map((ref, idx) => {
+                                                                        // Support both new format {title, url} and old format (string)
+                                                                        const refObj = typeof ref === 'object' && ref !== null
+                                                                            ? ref as { title?: string; url?: string }
+                                                                            : { title: String(ref), url: String(ref) };
+                                                                        const title = refObj.title || refObj.url || '';
+                                                                        const url = refObj.url || '';
+
+                                                                        // Add https:// if URL doesn't have protocol
+                                                                        const hasProtocol = /^https?:\/\//i.test(url.trim());
+                                                                        const isValidUrl = url.trim() && (hasProtocol || url.includes('.'));
+                                                                        const fullUrl = isValidUrl && !hasProtocol ? `https://${url.trim()}` : url.trim();
+
+                                                                        return (
+                                                                            <li key={`ref-${idx}`}>
+                                                                                {isValidUrl ? (
+                                                                                    <a
+                                                                                        href={fullUrl}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                    >
+                                                                                        {title}
+                                                                                    </a>
+                                                                                ) : (
+                                                                                    <span>{title}</span>
+                                                                                )}
+                                                                            </li>
+                                                                        );
+                                                                    })}
                                                                 </ol>
                                                             ) : (
                                                                 <div

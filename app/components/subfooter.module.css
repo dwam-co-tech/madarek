@@ -220,6 +220,16 @@
 .tabItem:hover .tabLabel {
   display: inline;
 }
+
+@media (hover: none) {
+  .tabItem {
+    width: 180px;
+    gap: 8px;
+  }
+  .tabLabel {
+    display: inline;
+  }
+}
 .tabPrint {
   background: linear-gradient(135deg, var(--brown-700), var(--brown-500));
 }
