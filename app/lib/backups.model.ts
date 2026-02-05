@@ -54,7 +54,12 @@ export type BackupDiagnosticsResponse = {
     dump_binary_path: string | null;
     looks_windows_path: boolean;
     invalid_for_os: boolean;
+    candidate?: string | null;
     found_in_dump_binary_path: boolean | null;
+    is_executable_in_dump_binary_path?: boolean | null;
+    version_exit_code?: number | null;
+    version_stdout?: string | null;
+    version_stderr?: string | null;
     shell_exec_enabled: boolean;
     found_in_path: boolean | null;
     which: string | null;

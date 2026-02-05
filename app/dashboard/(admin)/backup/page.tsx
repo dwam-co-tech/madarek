@@ -742,25 +742,35 @@ export default function BackupPage() {
                   <div className={styles.historyItem}>
                     <div className={styles.historyHeader}>
                       <span className={`${styles.statusBadge} ${styles.historyTypeCreate}`}>mysqldump</span>
-                      <span
-                        className={`${styles.statusBadge} ${diagnostics.mysqldump.invalid_for_os || diagnostics.mysqldump.found_in_path === false
-                            ? styles.statusFailed
-                            : styles.statusSuccess
-                          }`}
-                      >
-                        {diagnostics.mysqldump.invalid_for_os || diagnostics.mysqldump.found_in_path === false ? 'مشكلة محتملة' : 'سليم'}
-                      </span>
+                      {(() => {
+                        const configured = !!diagnostics.mysqldump.dump_binary_path;
+                        const configuredButMissing = configured && diagnostics.mysqldump.found_in_dump_binary_path === false;
+                        const missingInPath = !configured && diagnostics.mysqldump.found_in_path === false;
+                        const maybeBroken = diagnostics.mysqldump.version_exit_code != null && diagnostics.mysqldump.version_exit_code !== 0;
+                        const hasProblem = diagnostics.mysqldump.invalid_for_os || configuredButMissing || missingInPath || maybeBroken;
+                        return (
+                          <span className={`${styles.statusBadge} ${hasProblem ? styles.statusFailed : styles.statusSuccess}`}>
+                            {hasProblem ? 'مشكلة محتملة' : 'سليم'}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className={styles.historyMessage}>
                       {diagnostics.mysqldump.invalid_for_os
                         ? `مسار dump_binary_path مضبوط على Windows (${diagnostics.mysqldump.dump_binary_path}) بينما السيرفر ${diagnostics.os_family}.`
-                        : diagnostics.mysqldump.found_in_path === false && !diagnostics.mysqldump.dump_binary_path
-                          ? 'mysqldump غير موجود في PATH على السيرفر (غالبًا mysql-client غير مُثبت).'
-                          : diagnostics.mysqldump.dump_binary_path
-                            ? `dump_binary_path=${diagnostics.mysqldump.dump_binary_path}`
-                            : diagnostics.mysqldump.which
-                              ? `تم العثور على mysqldump: ${diagnostics.mysqldump.which}`
-                              : 'لا توجد معلومات كافية عن mysqldump.'}
+                        : diagnostics.mysqldump.dump_binary_path && diagnostics.mysqldump.found_in_dump_binary_path === false
+                          ? `dump_binary_path=${diagnostics.mysqldump.dump_binary_path} لكن mysqldump غير موجود داخله. لازم تثبّت mysql-client داخل نفس بيئة التشغيل (السيرفر/الكونتينر) أو تضبط المسار الصحيح.`
+                          : !diagnostics.mysqldump.dump_binary_path && diagnostics.mysqldump.found_in_path === false
+                            ? 'mysqldump غير موجود في PATH على السيرفر (غالبًا mysql-client غير مُثبت).'
+                            : diagnostics.mysqldump.version_exit_code != null && diagnostics.mysqldump.version_exit_code !== 0
+                              ? `تعذر تشغيل mysqldump (${diagnostics.mysqldump.candidate ?? '—'}). غالبًا الحزمة غير مثبتة داخل بيئة PHP/الكونتينر أو هناك مشكلة مكتبات.`
+                              : diagnostics.mysqldump.dump_binary_path
+                                ? `dump_binary_path=${diagnostics.mysqldump.dump_binary_path}${diagnostics.mysqldump.found_in_dump_binary_path ? ' (تم العثور على mysqldump)' : ''}`
+                                : diagnostics.mysqldump.which
+                                  ? `تم العثور على mysqldump: ${diagnostics.mysqldump.which}`
+                                  : 'لا توجد معلومات كافية عن mysqldump.'}
+                      {diagnostics.mysqldump.version_stdout ? `\n${diagnostics.mysqldump.version_stdout}` : ''}
+                      {diagnostics.mysqldump.version_stderr ? `\n${diagnostics.mysqldump.version_stderr}` : ''}
                     </div>
                   </div>
 
@@ -785,12 +795,13 @@ export default function BackupPage() {
                   <div className={styles.historyItem}>
                     <div className={styles.historyHeader}>
                       <span className={`${styles.statusBadge} ${styles.historyTypeCreate}`}>Cron/Scheduler</span>
-                      <span
-                        className={`${styles.statusBadge} ${diagnostics.scheduler.ok === false ? styles.statusFailed : styles.statusSuccess
-                          }`}
-                      >
-                        {diagnostics.scheduler.ok === false ? 'غير نشط' : 'نشط'}
-                      </span>
+                      {diagnostics.scheduler.last_tick ? (
+                        <span className={`${styles.statusBadge} ${diagnostics.scheduler.ok === false ? styles.statusFailed : styles.statusSuccess}`}>
+                          {diagnostics.scheduler.ok === false ? 'غير نشط' : 'نشط'}
+                        </span>
+                      ) : (
+                        <span className={`${styles.statusBadge} ${styles.statusQueued}`}>غير معروف</span>
+                      )}
                     </div>
                     <div className={styles.historyMessage}>
                       {diagnostics.scheduler.last_tick
