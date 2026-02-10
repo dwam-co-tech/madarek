@@ -32,6 +32,7 @@ const items: MenuItem[] = [
 ];
 
 function ArcMenu() {
+  const [mounted, setMounted] = useState(false);
   const radius = 300; // px
   const startDeg = 250;
   const endDeg = 110;
@@ -47,6 +48,10 @@ function ArcMenu() {
     "#d7b98d",
     "#e6ccab",
   ];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="relative h-screen w-full" suppressHydrationWarning>
@@ -67,6 +72,8 @@ function ArcMenu() {
           transform: "translate(50%, -50%)",
           color: "#f5f5f5",
           backgroundImage: `linear-gradient(135deg, ${bg}, ${bg}e6)`,
+          opacity: mounted ? 1 : 0,
+          animation: mounted ? `fadeInUp 0.6s ease-out ${i * 0.1}s forwards` : "none",
         };
 
         return (
