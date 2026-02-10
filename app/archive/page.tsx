@@ -151,7 +151,7 @@ export default function ArchivePage() {
         <div ref={footerSentinelRef} className={styles.footerSentinel} />
       </section>
 
-      <Subfooter visible={footerVisible} shareText="أرشيف المجلة" />
+      <Subfooter visible={footerVisible} shareText="أرشيف المجلة" showActions={false} />
     </main>
   );
 }

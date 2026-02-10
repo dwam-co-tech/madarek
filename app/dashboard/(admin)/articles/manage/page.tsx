@@ -24,6 +24,19 @@ type EditableFields = {
   content: string;
 };
 
+function formatDateTime(value?: string | null): string {
+  if (!value) return '-';
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value ?? '-';
+    const date = d.toLocaleDateString('ar-EG');
+    const time = d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    return `${date} ${time}`;
+  } catch {
+    return value ?? '-';
+  }
+}
+
 function ManageArticlePageInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -47,9 +60,11 @@ function ManageArticlePageInner() {
   const [toast, setToast] = React.useState<string | null>(null);
   const [featuredImageFile, setFeaturedImageFile] = React.useState<File | null>(null);
   const [featuredPreview, setFeaturedPreview] = React.useState<string | null>(null);
-  type RefItem = { url: string; originIndex?: number };
+  const [pdfFile, setPdfFile] = React.useState<File | null>(null);
+  type RefItem = { title: string; url: string; originIndex?: number };
   const [referencesItems, setReferencesItems] = React.useState<RefItem[]>([]);
   const [removedIndices, setRemovedIndices] = React.useState<number[]>([]);
+  const [refTitleInput, setRefTitleInput] = React.useState<string>('');
   const [refLinkInput, setRefLinkInput] = React.useState<string>('');
 
   React.useEffect(() => {
@@ -75,7 +90,14 @@ function ManageArticlePageInner() {
           content: a.content ?? '',
         });
         const initialRefs = Array.isArray(a.references) ? a.references : [];
-        setReferencesItems(initialRefs.map((url, idx) => ({ url, originIndex: idx })));
+        setReferencesItems(initialRefs.map((ref, idx) => {
+          if (typeof ref === 'object' && ref !== null) {
+            return { title: ref.title || '', url: ref.url || '', originIndex: idx };
+          }
+          // Backward compatibility for old string references
+          const refStr = typeof ref === 'string' ? ref : '';
+          return { title: refStr, url: refStr, originIndex: idx };
+        }));
         setRemovedIndices([]);
       } catch {
         if (!alive) return;
@@ -100,7 +122,7 @@ function ManageArticlePageInner() {
     if (featuredPreview) {
       try {
         URL.revokeObjectURL(featuredPreview);
-      } catch {}
+      } catch { }
     }
     if (file) {
       const url = URL.createObjectURL(file);
@@ -115,16 +137,21 @@ function ManageArticlePageInner() {
       if (featuredPreview) {
         try {
           URL.revokeObjectURL(featuredPreview);
-        } catch {}
+        } catch { }
       }
     };
   }, [featuredPreview]);
+
+  const onPickPdf: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    setPdfFile(file);
+  };
 
   const save = async () => {
     if (!articleId) return;
     setIsLoading(true);
     try {
-      const allLinks = Array.from(new Set(referencesItems.map((it) => it.url.trim()).filter((u) => u)));
+      const allRefs = referencesItems.filter((it) => it.title.trim() || it.url.trim()).map((it) => ({ title: it.title.trim(), url: it.url.trim() }));
       const payload = {
         title: form.title,
         open_title: form.open_title,
@@ -132,19 +159,26 @@ function ManageArticlePageInner() {
         author_name: form.author_name,
         gregorian_date: form.gregorian_date,
         hijri_date: form.hijri_date,
-        references: allLinks,
+        references: allRefs,
         references_tmp: form.references,
         references_remove_indexes: removedIndices,
         status: form.status,
         className: form.className,
         content: form.content,
         featured_image: featuredImageFile ?? undefined,
+        pdf_file: pdfFile ?? undefined,
       };
       const res = await updateArticle(articleId, payload);
       const updated = res.article;
       setArticle(updated);
       const updatedRefs = Array.isArray(updated.references) ? updated.references : [];
-      setReferencesItems(updatedRefs.map((url, idx) => ({ url, originIndex: idx })));
+      setReferencesItems(updatedRefs.map((ref, idx) => {
+        if (typeof ref === 'object' && ref !== null) {
+          return { title: (ref as { title?: string }).title || '', url: (ref as { url?: string }).url || '', originIndex: idx };
+        }
+        const refStr = typeof ref === 'string' ? ref : '';
+        return { title: refStr, url: refStr, originIndex: idx };
+      }));
       setRemovedIndices([]);
       const msgLower = (res.message || '').toLowerCase();
       const created = msgLower.includes('created') || res.message?.includes('تم إنشاء');
@@ -152,8 +186,8 @@ function ManageArticlePageInner() {
       const toastMsg = created
         ? 'تم إنشاء المقالة بنجاح'
         : updatedMsg
-        ? 'تم تحديث المقالة بنجاح'
-        : res.message || 'تم حفظ المقال بنجاح';
+          ? 'تم تحديث المقالة بنجاح'
+          : res.message || 'تم حفظ المقال بنجاح';
       setToast(toastMsg);
       window.setTimeout(() => setToast(null), 3000);
     } catch (err) {
@@ -165,7 +199,7 @@ function ManageArticlePageInner() {
   };
 
   const backHref =
-    issueId && issueId.trim() !== '' ? `/dashboard/articles?id=${encodeURIComponent(issueId)}` : '/dashboard/articles';
+    issueId && issueId.trim() !== '' ? `/md-dash/articles?id=${encodeURIComponent(issueId)}` : '/md-dash/articles';
 
   return (
     <div className={styles.page}>
@@ -185,7 +219,7 @@ function ManageArticlePageInner() {
           <div className={styles.emptyHint}>تأكد من المعرّفات المرسلة عبر الرابط</div>
         </div>
       ) : (
-        <>
+        <React.Fragment>
           <div className={styles.previewCard}>
             <div className={styles.previewInfo}>
               <div className={styles.previewTitle}>{article.title}</div>
@@ -227,6 +261,26 @@ function ManageArticlePageInner() {
                   className={styles.input}
                   onChange={onPickImage}
                 />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>ملف PDF</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className={styles.input}
+                  onChange={onPickPdf}
+                />
+                {(pdfFile || article.pdf_file) && (
+                  <div className={styles.metaValue} style={{ marginTop: '0.5rem' }}>
+                    {pdfFile ? (
+                      <span>تم اختيار: {pdfFile.name}</span>
+                    ) : article.pdf_file ? (
+                      <a href={article.pdf_file} target="_blank" rel="noopener noreferrer">
+                        عرض ملف PDF الحالي
+                      </a>
+                    ) : null}
+                  </div>
+                )}
               </div>
               {/* <div className={styles.fieldRow}>
                 <div className={styles.field}>
@@ -335,70 +389,123 @@ function ManageArticlePageInner() {
                   onChange={(e) => onChange('references', e.target.value)}
                   placeholder="أدخل المراجع هنا"
                 /> */}
-                <div className={styles.fieldRow}>
+                <div className={styles.cardTitle}>المراجع</div>
+                <div className={styles.fieldRow} style={{ gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <input
+                    className={styles.input}
+                    value={refTitleInput}
+                    onChange={(e) => setRefTitleInput(e.target.value)}
+                    placeholder="اسم المرجع"
+                    style={{ flex: 1 }}
+                  />
                   <input
                     className={styles.input}
                     value={refLinkInput}
                     onChange={(e) => setRefLinkInput(e.target.value)}
-                    placeholder="أدخل رابط مرجع"
+                    placeholder="رابط المرجع"
+                    style={{ flex: 1 }}
                   />
                   <button
                     type="button"
                     className={styles.saveBtn}
-                  onClick={() => {
-                    const v = refLinkInput.trim();
-                    if (!v) return;
-                    setReferencesItems((prev) => [...prev, { url: v }]);
-                    setRefLinkInput('');
-                  }}
+                    onClick={() => {
+                      const title = refTitleInput.trim();
+                      const url = refLinkInput.trim();
+                      if (!title && !url) return;
+                      setReferencesItems((prev) => [...prev, { title: title || url, url }]);
+                      setRefTitleInput('');
+                      setRefLinkInput('');
+                    }}
                   >
-                    إضافة رابط
+                    إضافة
                   </button>
                 </div>
                 {referencesItems.length > 0 ? (
-                  <ul className={styles.metaList}>
-                    {referencesItems.map((item, idx) => (
-                      <li key={`${item.url}-${idx}`} className={styles.metaItem}>
-                        {/^https?:\/\//i.test((item.url ?? '').trim()) ? (
-                          <a href={item.url} target="_blank" rel="noopener noreferrer">{item.url}</a>
-                        ) : (
-                          <span className={styles.metaValue}>{item.url}</span>
-                        )}
-                        <button
-                          type="button"
-                          className={styles.cancelBtn}
-                          onClick={() => {
-                            setReferencesItems((prev) => {
-                              const target = prev[idx];
-                              if (typeof target.originIndex === 'number') {
-                                setRemovedIndices((r) => Array.from(new Set([...r, target.originIndex as number])));
-                              }
-                              const next = [...prev];
-                              next.splice(idx, 1);
-                              return next;
-                            });
-                          }}
-                          aria-label="حذف الرابط"
-                        >
-                          حذف
-                        </button>
-                      </li>
-                    ))}
+                  <ul className={styles.metaList} style={{ listStyle: 'none', padding: 0 }}>
+                    {referencesItems.map((item, idx) => {
+                      const displayUrl = item.url && item.url.length > 30
+                        ? item.url.substring(0, 30) + '...'
+                        : item.url;
+                      return (
+                        <li key={`${item.url}-${idx}`} className={styles.metaItem} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '0.75rem',
+                          marginBottom: '0.5rem',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(0,0,0,0.08)'
+                        }}>
+                          <div style={{ flex: 1, overflow: 'hidden' }}>
+                            <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{item.title || item.url}</div>
+                            {item.url && (
+                              <div style={{ fontSize: '0.8rem', color: '#888', direction: 'ltr', textAlign: 'left' }}>
+                                {displayUrl}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem', marginRight: '0.5rem' }}>
+                            <button
+                              type="button"
+                              className={styles.saveBtn}
+                              style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+                              onClick={() => {
+                                setRefTitleInput(item.title);
+                                setRefLinkInput(item.url);
+                                setReferencesItems((prev) => {
+                                  const target = prev[idx];
+                                  if (typeof target.originIndex === 'number') {
+                                    setRemovedIndices((r) => Array.from(new Set([...r, target.originIndex as number])));
+                                  }
+                                  const next = [...prev];
+                                  next.splice(idx, 1);
+                                  return next;
+                                });
+                              }}
+                              aria-label="تعديل المرجع"
+                            >
+                              تعديل
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.cancelBtn}
+                              style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+                              onClick={() => {
+                                setReferencesItems((prev) => {
+                                  const target = prev[idx];
+                                  if (typeof target.originIndex === 'number') {
+                                    setRemovedIndices((r) => Array.from(new Set([...r, target.originIndex as number])));
+                                  }
+                                  const next = [...prev];
+                                  next.splice(idx, 1);
+                                  return next;
+                                });
+                              }}
+                              aria-label="حذف المرجع"
+                            >
+                              حذف
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : null}
               </div>
             </div>
-          </div>
 
-          <div className={styles.actions}>
-            <button className={styles.saveBtn} onClick={save}>
-              حفظ التغييرات
-            </button>
-            <button className={styles.cancelBtn} onClick={() => router.push(backHref)}>
-              إلغاء
-            </button>
-          </div>
-        </>
+            <div className={styles.actions}>
+              <button className={styles.saveBtn} onClick={save}>
+                حفظ التغييرات
+              </button>
+              <button className={styles.cancelBtn} onClick={() => router.push(backHref)}>
+                إلغاء
+              </button>
+            </div>
+         </div>
+
+        </React.Fragment>
       )}
 
       {toast && (
@@ -423,17 +530,4 @@ export default function ManageArticlePage() {
       <ManageArticlePageInner />
     </React.Suspense>
   );
-}
-
-function formatDateTime(value?: string | null): string {
-  if (!value) return '-';
-  try {
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return value ?? '-';
-    const date = d.toLocaleDateString('ar-EG');
-    const time = d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-    return `${date} ${time}`;
-  } catch {
-    return value ?? '-';
-  }
 }

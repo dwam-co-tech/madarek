@@ -29,6 +29,8 @@ export type ArticleDetailResponse = {
   article: import('./issues.model').ArticleDTO & { issue: import('./issues.model').IssueDTO };
 };
 
+import type { ReferenceItem } from './issues.model';
+
 export type UpdateArticlePayload = {
   content?: string;
   title?: string;
@@ -37,12 +39,13 @@ export type UpdateArticlePayload = {
   author_name?: string;
   gregorian_date?: string;
   hijri_date?: string;
-  references?: string[];
+  references?: ReferenceItem[];
   references_tmp?: string;
   references_remove_indexes?: number[];
   status?: string;
   className?: string;
   featured_image?: File;
+  pdf_file?: File;
 };
 
 export type UpdateArticleResponse = {

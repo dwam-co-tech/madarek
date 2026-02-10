@@ -36,13 +36,17 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    
+
     if (!validate()) return;
 
     setIsLoading(true);
     try {
-      await authLogin(email, password);
-      router.push('/dashboard');
+      const auth = await authLogin(email, password);
+      if (auth.user.role === 'author') {
+        router.push('/md-dash/issues');
+      } else {
+        router.push('/md-dash');
+      }
     } catch (err: unknown) {
       let message = 'حدث خطأ غير متوقع';
       if (err instanceof Error) {
@@ -58,19 +62,19 @@ export default function LoginPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.logoContainer}>
-          <Image 
-            src="/logo3.png" 
-            alt="شعار مدارك" 
-            width={150} 
-            height={150} 
+          <Image
+            src="/logo3.png"
+            alt="شعار مدارك"
+            width={150}
+            height={150}
             className={styles.logo}
             priority
           />
         </div>
-        
+
         <h1 className={styles.title}>تسجيل الدخول</h1>
         <p className={styles.subtitle}>مرحباً بك في لوحة تحكم مدارك</p>
-        
+
         {errors.general && (
           <div className={styles.generalError}>
             {errors.general}
@@ -80,38 +84,38 @@ export default function LoginPage() {
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <div className={styles.inputGroup}>
             <label htmlFor="email" className={styles.label}>البريد الإلكتروني</label>
-            <input 
-              type="email" 
-              id="email" 
-              name="email" 
+            <input
+              type="email"
+              id="email"
+              name="email"
               className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
-              placeholder="name@example.com" 
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
             />
             {errors.email && <div className={styles.errorMsg}>{errors.email}</div>}
           </div>
-          
+
           <div className={styles.inputGroup}>
             <label htmlFor="password" className={styles.label}>كلمة المرور</label>
-            <input 
-              type="password" 
-              id="password" 
-              name="password" 
+            <input
+              type="password"
+              id="password"
+              name="password"
               className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
-              placeholder="••••••••" 
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
             />
             {errors.password && <div className={styles.errorMsg}>{errors.password}</div>}
           </div>
-          
+
           <button type="submit" className={styles.button} disabled={isLoading}>
             {isLoading ? <div className={styles.loader}></div> : 'تسجيل الدخول'}
           </button>
-          
+
           {/* <div className={styles.forgotPassword}>
             <a href="#" className={styles.forgotPasswordLink}>نسيت كلمة المرور؟</a>
           </div> */}

@@ -19,20 +19,20 @@ type MenuItem = {
   offsetY?: number;
 };
 
-const items: MenuItem[] = [
-  { label: "افتتــاحية الــعدد", href: "/editorial-opening", className: "arc-opening" },
-  { label: "قــاموس المصطلحـات", href: "/glossary", className: "arc-glossary" },
-  { label: "شخـصيــات صوفـيــة", href: "/profiles", className: "arc-profiles" },
-  { label: "إحصــائيات وتحليلات", href: "/stats", className: "arc-stats" },
-  { label: "الصوفية حول العالم", href: "/news", className: "arc-news" },
-  { label: "شبهــات تحت المجهر", href: "/refutations", className: "arc-refutations" },
-  { label: "خـزّانــة الوثــائق", href: "/documents-lectures", className: "arc-archive" },
-  { label: "مـحـطــات تـاريخية", href: "/history", className: "arc-history" },
-  { label: "عـصــارة الـكـتــب", href: "/library", className: "arc-library" },
+// Section items - now using dynamic route with issueId
+const sectionItems: MenuItem[] = [
+  { label: "افتتــاحية الــعدد", href: "/section/editorial-opening", className: "arc-opening" },
+  { label: "قــاموس المصطلحـات", href: "/section/glossary", className: "arc-glossary" },
+  { label: "شخـصيــات صوفـيــة", href: "/section/profiles", className: "arc-profiles" },
+  { label: "إحصــائيات وتحليلات", href: "/section/stats", className: "arc-stats" },
+  { label: "الصوفية حول العالم", href: "/section/news", className: "arc-news" },
+  { label: "شبهــات تحت المجهر", href: "/section/refutations", className: "arc-refutations" },
+  { label: "خـزّانــة الوثــائق", href: "/section/documents-lectures", className: "arc-archive" },
+  { label: "مـحـطــات تـاريخية", href: "/section/history", className: "arc-history" },
+  { label: "عـصــارة الـكـتــب", href: "/section/library", className: "arc-library" },
 ];
 
-function ArcMenu() {
-  const [mounted, setMounted] = useState(false);
+function ArcMenu({ issueId }: { issueId?: string | number | null }) {
   const radius = 300; // px
   const startDeg = 250;
   const endDeg = 110;
@@ -49,21 +49,26 @@ function ArcMenu() {
     "#e6ccab",
   ];
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Build href with issueId if available
+  const buildHref = (baseHref: string) => {
+    if (issueId) {
+      return `${baseHref}?issueId=${issueId}`;
+    }
+    return baseHref;
+  };
 
   return (
     <div className="relative h-screen w-full" suppressHydrationWarning>
-      {items.map((item, i) => {
-        const { label, href, className, angleDeg, radius: itemRadius, offsetX = 0, offsetY = 0 } = item;
-        const t = items.length === 1 ? 0 : i / (items.length - 1);
+      {sectionItems.map((item, i) => {
+        const { label, href: baseHref, className, angleDeg, radius: itemRadius, offsetX = 0, offsetY = 0 } = item;
+        const href = buildHref(baseHref);
+        const t = sectionItems.length === 1 ? 0 : i / (sectionItems.length - 1);
         const computedAngleDeg = angleDeg ?? startDeg + (endDeg - startDeg) * t;
         const angle = computedAngleDeg * (Math.PI / 180);
         const r = itemRadius ?? radius;
         const x = Math.cos(angle) * r + offsetX;
         const y = Math.sin(angle) * r + offsetY;
-        const bg = i === items.length - 1 ? "#D7BB91" : palette[i % palette.length];
+        const bg = i === sectionItems.length - 1 ? "#D7BB91" : palette[i % palette.length];
         const left = `var(--left, calc(50% + ${x}px + var(--offset-x, 0px)))`;
         const top = `var(--top, calc(50% + ${y}px + var(--offset-y, 0px)))`;
         const styleVars: CSSProperties = {
@@ -231,16 +236,18 @@ function HomeInner() {
     const run = async () => {
       // Check if there's a specific issue requested via query param (from archive page)
       const issueIdParam = params.get("issueId");
-      
+
       if (issueIdParam) {
         // Only use query param when explicitly provided (e.g., from archive)
         const d = await getIssue(issueIdParam);
         setIssue(d);
+        // Save to localStorage for section pages
+        localStorage.setItem("selectedIssueId", issueIdParam);
         const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
         setBgUrl(makeAbs(alt));
         return;
       }
-      
+
       // Always fetch and show the latest published issue
       const published = await getPublishedIssues();
       const pick = (() => {
@@ -257,10 +264,12 @@ function HomeInner() {
           .sort((a, b) => b.ts - a.ts)[0]?.it;
         return withDate ?? arr.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
       })();
-      
+
       if (pick) {
         const d = await getIssue(pick.id);
         setIssue(d);
+        // Save to localStorage for section pages
+        localStorage.setItem("selectedIssueId", String(pick.id));
         const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
         setBgUrl(makeAbs(alt));
       } else {
@@ -299,7 +308,7 @@ function HomeInner() {
           </p>
         </section>
         <section className="flex items-center justify-center px-10 arc-section arc-col section-height">
-          <ArcMenu />
+          <ArcMenu issueId={issue?.id} />
         </section>
       </main>
       <footer className="site-footer">

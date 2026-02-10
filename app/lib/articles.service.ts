@@ -76,7 +76,8 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
     }
     return { res, data };
   };
-  const hasFile = typeof payload.featured_image !== 'undefined' && payload.featured_image !== null;
+  const hasFile = (typeof payload.featured_image !== 'undefined' && payload.featured_image !== null) ||
+    (typeof payload.pdf_file !== 'undefined' && payload.pdf_file !== null);
   if (hasFile) {
     const makeForm = () => {
       const form = new FormData();
@@ -87,9 +88,9 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
       if (payload.gregorian_date) form.append('gregorian_date', payload.gregorian_date);
       if (payload.hijri_date) form.append('hijri_date', payload.hijri_date);
       if (Array.isArray(payload.references)) {
-        for (const lnk of payload.references) {
-          if (typeof lnk === 'string' && lnk.trim() !== '') {
-            form.append('references[]', lnk);
+        for (const ref of payload.references) {
+          if (ref && typeof ref === 'object' && ref.title && ref.url) {
+            form.append('references[]', JSON.stringify(ref));
           }
         }
       }
@@ -103,6 +104,7 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
       if (payload.className) form.append('className', payload.className);
       if (typeof payload.content === 'string') form.append('content', payload.content);
       if (payload.featured_image) form.append('featured_image', payload.featured_image);
+      if (payload.pdf_file) form.append('pdf_file', payload.pdf_file);
       return form;
     };
     const attempts = [

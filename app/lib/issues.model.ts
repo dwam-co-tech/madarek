@@ -39,6 +39,11 @@ export type GetIssuesResponse =
   | { data: IssueDTO[] }
   | IssueDTO[];
 
+export type ReferenceItem = {
+  title: string;
+  url: string;
+};
+
 export type ArticleDTO = {
   id: number;
   user_id: number;
@@ -50,9 +55,10 @@ export type ArticleDTO = {
   content?: string | null;
   author_name?: string | null;
   featured_image?: string | null;
+  pdf_file?: string | null;
   gregorian_date?: string | null;
   hijri_date?: string | null;
-  references?: string[];
+  references?: ReferenceItem[];
   references_tmp?: string | null;
   status: string;
   published_at?: string | null;

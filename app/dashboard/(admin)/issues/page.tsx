@@ -134,7 +134,7 @@ function IssuesContent() {
   React.useEffect(() => {
     if (shouldToast) {
       const t = setTimeout(() => {
-        router.replace('/dashboard/issues');
+        router.replace('/md-dash/issues');
       }, 1000);
       return () => clearTimeout(t);
     }
@@ -186,7 +186,7 @@ function IssuesContent() {
           })
         );
         setHasAggregates(true);
-      } catch {}
+      } catch { }
     })();
     return () => {
       alive = false;
@@ -244,16 +244,16 @@ function IssuesContent() {
           prev.map((x) =>
             x.id === String(it.id)
               ? {
-                  id: String(it.id),
-                  name: it.title,
-                  hijriDate: it.hijri_date ?? '',
-                  gregorianDate: it.gregorian_date ?? '',
-                  coverUrl: it.cover_image,
-                  pdfUrl: it.pdf_file,
-                  published: it.status === 'published',
-                  views: it.views ?? 0,
-                  createdAt: it.created_at ?? '',
-                }
+                id: String(it.id),
+                name: it.title,
+                hijriDate: it.hijri_date ?? '',
+                gregorianDate: it.gregorian_date ?? '',
+                coverUrl: it.cover_image,
+                pdfUrl: it.pdf_file,
+                published: it.status === 'published',
+                views: it.views ?? 0,
+                createdAt: it.created_at ?? '',
+              }
               : x
           )
         );
@@ -299,16 +299,16 @@ function IssuesContent() {
         prev.map((x) =>
           x.id === tmpId
             ? {
-                id: String(it.id),
-                name: it.title,
-                hijriDate: it.hijri_date ?? '',
-                gregorianDate: it.gregorian_date ?? '',
-                coverUrl: it.cover_image,
-                pdfUrl: it.pdf_file,
-                published: it.status === 'published',
-                views: it.views ?? 0,
-                createdAt: it.created_at ?? '',
-              }
+              id: String(it.id),
+              name: it.title,
+              hijriDate: it.hijri_date ?? '',
+              gregorianDate: it.gregorian_date ?? '',
+              coverUrl: it.cover_image,
+              pdfUrl: it.pdf_file,
+              published: it.status === 'published',
+              views: it.views ?? 0,
+              createdAt: it.created_at ?? '',
+            }
             : x
         )
       );
@@ -380,16 +380,16 @@ function IssuesContent() {
     try {
       let it:
         | {
-            id: number;
-            title: string;
-            hijri_date?: string;
-            gregorian_date?: string;
-            cover_image?: string;
-            pdf_file?: string;
-            status?: string;
-            views?: number;
-            views_count?: number;
-          }
+          id: number;
+          title: string;
+          hijri_date?: string;
+          gregorian_date?: string;
+          cover_image?: string;
+          pdf_file?: string;
+          status?: string;
+          views?: number;
+          views_count?: number;
+        }
         | null = null;
       if (next) {
         const resp = await publishIssueApi(id);
@@ -405,17 +405,17 @@ function IssuesContent() {
             prevList.map((x) =>
               x.id === String(it!.id)
                 ? {
-                    id: String(it!.id),
-                    name: it!.title,
-                    hijriDate: it!.hijri_date ?? '',
-                    gregorianDate: it!.gregorian_date ?? '',
-                    coverUrl: it!.cover_image,
-                    pdfUrl: it!.pdf_file,
-                    published: (it!.status ?? (next ? 'published' : 'draft')) === 'published',
-                    views: (it!.views ?? it!.views_count ?? 0) as number,
-                    createdAt: det.created_at ?? '',
-                    publishAt: det.published_at ?? '',
-                  }
+                  id: String(it!.id),
+                  name: it!.title,
+                  hijriDate: it!.hijri_date ?? '',
+                  gregorianDate: it!.gregorian_date ?? '',
+                  coverUrl: it!.cover_image,
+                  pdfUrl: it!.pdf_file,
+                  published: (it!.status ?? (next ? 'published' : 'draft')) === 'published',
+                  views: (it!.views ?? it!.views_count ?? 0) as number,
+                  createdAt: det.created_at ?? '',
+                  publishAt: det.published_at ?? '',
+                }
                 : x
             )
           );
@@ -424,17 +424,17 @@ function IssuesContent() {
             prevList.map((x) =>
               x.id === String(it!.id)
                 ? {
-                    id: String(it!.id),
-                    name: it!.title,
-                    hijriDate: it!.hijri_date ?? '',
-                    gregorianDate: it!.gregorian_date ?? '',
-                    coverUrl: it!.cover_image,
-                    pdfUrl: it!.pdf_file,
-                    published: (it!.status ?? (next ? 'published' : 'draft')) === 'published',
-                    views: (it!.views ?? it!.views_count ?? 0) as number,
-                    createdAt: x.createdAt,
-                    publishAt: x.publishAt,
-                  }
+                  id: String(it!.id),
+                  name: it!.title,
+                  hijriDate: it!.hijri_date ?? '',
+                  gregorianDate: it!.gregorian_date ?? '',
+                  coverUrl: it!.cover_image,
+                  pdfUrl: it!.pdf_file,
+                  published: (it!.status ?? (next ? 'published' : 'draft')) === 'published',
+                  views: (it!.views ?? it!.views_count ?? 0) as number,
+                  createdAt: x.createdAt,
+                  publishAt: x.publishAt,
+                }
                 : x
             )
           );
@@ -451,6 +451,8 @@ function IssuesContent() {
   return (
     <div>
       <LoadingOverlay open={isLoading} label="جاري التحميل..." ariaLabel="جاري التحميل" />
+      <LoadingOverlay open={isSaving} label="جاري حفظ العدد..." ariaLabel="جاري الحفظ" />
+      <LoadingOverlay open={isDeleting} label="جاري حذف العدد..." ariaLabel="جاري الحذف" />
       {shouldToast && (
         <div className={`${styles.toastCenter} ${styles.toastShow}`}>
           <Info className={styles.toastIcon} size={24} />
@@ -524,7 +526,7 @@ function IssuesContent() {
                 </td>
                 <td className={styles.td}>
                   <div className={styles.actions}>
-                    <Link href={`/dashboard/articles?id=${issue.id}`} className={styles.iconBtn}>
+                    <Link href={`/md-dash/articles?id=${issue.id}`} className={styles.iconBtn}>
                       <FileText size={18} />
                       <span className={styles.iconLabel}>إدارة المقالات</span>
                     </Link>
@@ -575,7 +577,7 @@ function IssuesContent() {
               <span>{issue.published ? 'منشور' : 'مسودة'}</span>
             </div>
             <div className={styles.cardActions}>
-              <Link href={`/dashboard/articles?id=${issue.id}`} className={styles.iconBtn} title="إدارة المقالات">
+              <Link href={`/md-dash/articles?id=${issue.id}`} className={styles.iconBtn} title="إدارة المقالات">
                 <FileText size={18} />
               </Link>
               <button className={styles.iconBtn} onClick={() => openEditModal(issue)} title="تعديل العدد">
@@ -605,7 +607,7 @@ function IssuesContent() {
             ▶
           </button>
 
- {Array.from({ length: lastPage }).map((_, i) => {
+          {Array.from({ length: lastPage }).map((_, i) => {
             const p = i + 1;
             const active = p === page;
             return (
@@ -637,8 +639,8 @@ function IssuesContent() {
           >
             ◀
           </button>
-         
-          
+
+
         </div>
       </div>
 
