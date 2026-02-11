@@ -6,8 +6,9 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import Subheader from "../../components/Subheader";
 import Subfooter from "../../components/Subfooter";
-import { getIssue, getIssueArticles, getPublishedIssues } from "../../lib/issues.service";
+import { getIssue, getIssueArticles, getPublishedIssues } from "../../lib/cached-issues.service";
 import type { ArticleDTO, IssueDetailDTO } from "../../lib/issues.model";
+import PageLoader from "@/components/PageLoader";
 
 // Section configuration - maps URL slug to className and title
 const SECTIONS: Record<string, { className: string; title: string }> = {
@@ -54,6 +55,16 @@ function SectionPageContent() {
     // Section title and info
     const issueTitle = section?.title ?? "القسم";
     const primaryTitle = articles[0]?.open_title ?? articles[0]?.title ?? issueTitle;
+
+    // Update document title dynamically
+    useEffect(() => {
+        if (articles.length > 0) {
+            const articleTitle = articles[0]?.open_title ?? articles[0]?.title ?? issueTitle;
+            document.title = `مجلة مدارك | ${articleTitle}`;
+        } else if (section) {
+            document.title = `مجلة مدارك | ${section.title}`;
+        }
+    }, [articles, issueTitle, section]);
 
     // Format date label from issue
     const dateLabel = (() => {
@@ -193,6 +204,7 @@ function SectionPageContent() {
 
     return (
         <main className={styles.stage}>
+            {loading && <PageLoader message="جاري تحميل المقالات..." />}
             <Subheader issueTitle={issueTitle} dateLabel={dateLabel} />
 
             <section className={styles.contentArea}>

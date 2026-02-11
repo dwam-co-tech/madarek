@@ -1,13 +1,14 @@
 "use client";
 import type { CSSProperties } from "react";
-import logoPng from "@/public/logo3.png";
+import logoPng from "@/public/mainlogo.png";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getIssue, getPublishedIssues } from "./lib/issues.service";
+import { getIssue, getPublishedIssues } from "./lib/cached-issues.service";
 import type { IssueDetailDTO } from "./lib/issues.model";
 import IssueSection from "./components/IssueSection";
+import PageLoader from "@/components/PageLoader";
 
 type MenuItem = {
   label: string;
@@ -32,7 +33,8 @@ const sectionItems: MenuItem[] = [
   { label: "عـصــارة الـكـتــب", href: "/section/library", className: "arc-library" },
 ];
 
-function ArcMenu({ issueId }: { issueId?: string | number | null }) {
+function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null; startAnimation?: boolean }) {
+  const [mounted, setMounted] = useState(false);
   const radius = 300; // px
   const startDeg = 250;
   const endDeg = 110;
@@ -48,6 +50,16 @@ function ArcMenu({ issueId }: { issueId?: string | number | null }) {
     "#d7b98d",
     "#e6ccab",
   ];
+
+  useEffect(() => {
+    // Start animation only when startAnimation is true (after loading is done)
+    if (startAnimation) {
+      const timer = setTimeout(() => {
+        setMounted(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [startAnimation]);
 
   // Build href with issueId if available
   const buildHref = (baseHref: string) => {
@@ -205,6 +217,7 @@ function HomeInner() {
   const params = useSearchParams();
   const [issue, setIssue] = useState<IssueDetailDTO | null>(null);
   const [bgUrl, setBgUrl] = useState<string>("/cover.jpg");
+  const [loading, setLoading] = useState(true);
   type CSSVars = CSSProperties & Record<string, string | number>;
   const issueProps = useMemo(() => {
     const title = issue?.title ?? "عدد المجلة";
@@ -229,58 +242,68 @@ function HomeInner() {
       numberTitle: title,
       hijriYear: hijri,
       gregorianDate: greg,
-      shareText: title,
+      shareText: `مجلة مدارك | ${title}`,
     };
   }, [issue]);
   useEffect(() => {
     const run = async () => {
-      // Check if there's a specific issue requested via query param (from archive page)
-      const issueIdParam = params.get("issueId");
+      setLoading(true);
+      try {
+        // Check if there's a specific issue requested via query param (from archive page)
+        const issueIdParam = params.get("issueId");
 
-      if (issueIdParam) {
-        // Only use query param when explicitly provided (e.g., from archive)
-        const d = await getIssue(issueIdParam);
-        setIssue(d);
-        // Save to localStorage for section pages
-        localStorage.setItem("selectedIssueId", issueIdParam);
-        const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
-        setBgUrl(makeAbs(alt));
-        return;
-      }
+        if (issueIdParam) {
+          // Only use query param when explicitly provided (e.g., from archive)
+          const d = await getIssue(issueIdParam);
+          setIssue(d);
+          // Save to localStorage for section pages
+          localStorage.setItem("selectedIssueId", issueIdParam);
+          const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
+          setBgUrl(makeAbs(alt));
+          return;
+        }
 
-      // Always fetch and show the latest published issue
-      const published = await getPublishedIssues();
-      const pick = (() => {
-        const arr = Array.isArray(published) ? published : [];
-        if (arr.length === 0) return null;
-        const withDate = arr
-          .map((it) => ({
-            it,
-            ts:
-              Date.parse((it as Record<string, unknown>)["published_at"] as string) ||
-              Date.parse((it as Record<string, unknown>)["updated_at"] as string) ||
-              0,
-          }))
-          .sort((a, b) => b.ts - a.ts)[0]?.it;
-        return withDate ?? arr.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
-      })();
+        // Always fetch and show the latest published issue
+        const published = await getPublishedIssues();
+        const pick = (() => {
+          const arr = Array.isArray(published) ? published : [];
+          if (arr.length === 0) return null;
+          const withDate = arr
+            .map((it) => ({
+              it,
+              ts:
+                Date.parse((it as Record<string, unknown>)["published_at"] as string) ||
+                Date.parse((it as Record<string, unknown>)["updated_at"] as string) ||
+                0,
+            }))
+            .sort((a, b) => b.ts - a.ts)[0]?.it;
+          return withDate ?? arr.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
+        })();
 
-      if (pick) {
-        const d = await getIssue(pick.id);
-        setIssue(d);
-        // Save to localStorage for section pages
-        localStorage.setItem("selectedIssueId", String(pick.id));
-        const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
-        setBgUrl(makeAbs(alt));
-      } else {
+        if (pick) {
+          const d = await getIssue(pick.id);
+          setIssue(d);
+          // Save to localStorage for section pages
+          localStorage.setItem("selectedIssueId", String(pick.id));
+          const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
+          setBgUrl(makeAbs(alt));
+        } else {
+          setIssue(null);
+          setBgUrl("/cover.jpg");
+        }
+      } catch (error) {
+        console.error("Error loading issue:", error);
         setIssue(null);
         setBgUrl("/cover.jpg");
+      } finally {
+        setLoading(false);
       }
     };
     run();
   }, [params]);
   return (
     <>
+      {loading && <PageLoader message="جاري تحميل العدد..." />}
       <main className="grid grid-cols-[30%_40%_30%] bg-[var(--beige-100)] home-stage" style={{ ["--home-bg-url"]: `url(\"${bgUrl}\")` } as CSSVars}>
         <section className="relative flex items-center justify-center issue-col section-height">
           <IssueSection
@@ -308,7 +331,7 @@ function HomeInner() {
           </p>
         </section>
         <section className="flex items-center justify-center px-10 arc-section arc-col section-height">
-          <ArcMenu issueId={issue?.id} />
+          <ArcMenu issueId={issue?.id} startAnimation={!loading} />
         </section>
       </main>
       <footer className="site-footer">

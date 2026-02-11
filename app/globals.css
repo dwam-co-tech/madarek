@@ -445,6 +445,7 @@ main.home-stage {
   border-radius: 9999px;
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.25);
   transform: translate(50%, -50%);
+  opacity: 0;
 }
 
 .arc-label {
@@ -581,16 +582,6 @@ main.home-stage {
   perspective: 600px;
 }
 
-@keyframes initAnimation {
-  0% {
-    transform: rotateY(30deg);
-  }
-
-  100% {
-    transform: rotateY(20deg);
-  }
-}
-
 .book {
   width: 200px;
   height: 300px;
@@ -598,7 +589,6 @@ main.home-stage {
   transform-style: preserve-3d;
   transform: rotateY(20deg);
   transition: 1.5s ease;
-  animation: 1s ease 0s 1 initAnimation;
 }
 
 .book-container:hover .book,
@@ -975,14 +965,22 @@ main.home-stage {
 
   .issue-archive .action-archive {
     display: flex;
-    width: 100%;
+    width: calc((92vw - 24px) / 3 * 2.5 + 16px);
+    margin: 0 auto;
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+
+  .issue-archive .action-archive .action-icon {
+    width: 24px;
+    height: 24px;
   }
 
   .arc-item {
     position: static !important;
     left: auto !important;
     top: auto !important;
-    transform: none !important;
+    transform: translateX(-3vw) !important;
     display: block;
     width: 86vw;
     margin: 5px auto;

@@ -16,16 +16,18 @@ type ArchiveItem = {
   views: number;
 };
 
-import { getPublishedIssues } from "@/app/lib/issues.service";
+import { getPublishedIssues } from "@/app/lib/cached-issues.service";
 import type { IssueDTO } from "@/app/lib/issues.model";
+import PageLoader from "@/components/PageLoader";
 
 export default function ArchivePage() {
   const issueTitle = "أرشيف المجلة";
   const [footerVisible, setFooterVisible] = useState(false);
   const footerSentinelRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
-  const [sortDesc, setSortDesc] = useState(true);
+  const [sortDesc, setSortDesc] = useState(false);
   const [itemsState, setItemsState] = useState<ArchiveItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const el = footerSentinelRef.current;
@@ -42,6 +44,7 @@ export default function ArchivePage() {
   }, []);
 
   useEffect(() => {
+    document.title = "مجلة مدارك | أرشيف المجلة";
     document.body.classList.add("subpage-scroll");
     document.documentElement.classList.add("subpage-scroll");
     return () => {
@@ -52,6 +55,7 @@ export default function ArchivePage() {
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
         const list = await getPublishedIssues();
         const sanitize = (s: string | undefined | null) => String(s ?? "").replace(/[`]+/g, "").trim();
@@ -81,11 +85,13 @@ export default function ArchivePage() {
         setItemsState(mapped);
       } catch {
         setItemsState([]);
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
 
-  const items = useMemo(() => {
+  const itemsByYear = useMemo(() => {
     const filtered = itemsState.filter((it) => {
       const q = query.trim();
       if (!q) return true;
@@ -93,16 +99,37 @@ export default function ArchivePage() {
       return text.includes(q.toLowerCase());
     });
     const sorted = [...filtered].sort((a, b) => (sortDesc ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id)));
-    return sorted;
+    
+    // Group by Hijri year
+    const grouped = new Map<string, ArchiveItem[]>();
+    sorted.forEach((item) => {
+      // Extract Hijri year from hijriLabel (e.g., "شعبان 1447 هـ" -> "1447")
+      const yearMatch = item.hijriLabel.match(/(\d{4})/);
+      const year = yearMatch ? yearMatch[1] : "غير محدد";
+      
+      if (!grouped.has(year)) {
+        grouped.set(year, []);
+      }
+      grouped.get(year)!.push(item);
+    });
+    
+    // Convert to array and sort by year
+    const result = Array.from(grouped.entries()).sort((a, b) => {
+      if (a[0] === "غير محدد") return 1;
+      if (b[0] === "غير محدد") return -1;
+      return sortDesc ? b[0].localeCompare(a[0]) : a[0].localeCompare(b[0]);
+    });
+    
+    return result;
   }, [itemsState, query, sortDesc]);
 
   return (
     <main className={styles.stage}>
-      <Subheader issueTitle={issueTitle} dateLabel="تصفح الأعداد السابقة" />
+      {loading && <PageLoader message="جاري تحميل الأرشيف..." />}
+      <Subheader issueTitle={issueTitle} dateLabel="" hideBadges={true} />
 
       <section className={styles.contentArea}>
         <div className={styles.archiveHeader}>
-          <h2 className={styles.archiveTitle}>أعداد سنة 1447 هـ</h2>
           <div className={styles.controls}>
             <div className={styles.searchBox}>
               <input
@@ -131,22 +158,27 @@ export default function ArchivePage() {
           </div>
         </div>
 
-        <div className={styles.grid}>
-          {items.map((it) => (
-            <article key={it.id} className={styles.card}>
-              <IssueSection
-                coverSrc={it.cover}
-                viewHref={`/?issueId=${it.id}`}
-                downloadHref={it.pdf}
-                views={it.views}
-                numberTitle={it.title}
-                hijriYear={it.hijriLabel}
-                gregorianDate={it.gregLabel}
-                shareText={it.title}
-              />
-            </article>
-          ))}
-        </div>
+        {itemsByYear.map(([year, items]) => (
+          <div key={year} className={styles.yearSection}>
+            <h2 className={styles.yearTitle}>أعداد سنة {year} هـ</h2>
+            <div className={styles.grid}>
+              {items.map((it) => (
+                <article key={it.id} className={styles.card}>
+                  <IssueSection
+                    coverSrc={it.cover}
+                    viewHref={`/?issueId=${it.id}`}
+                    downloadHref={it.pdf}
+                    views={it.views}
+                    numberTitle={it.title}
+                    hijriYear={it.hijriLabel}
+                    gregorianDate={it.gregLabel}
+                    shareText={`مجلة مدارك | ${it.title}`}
+                  />
+                </article>
+              ))}
+            </div>
+          </div>
+        ))}
 
         <div ref={footerSentinelRef} className={styles.footerSentinel} />
       </section>

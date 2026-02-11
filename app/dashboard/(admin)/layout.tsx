@@ -23,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const inactivityTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const authUser: User | null = (() => {
     try {
       return getAuthUser();
@@ -38,6 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Check auth
   useEffect(() => {
+    document.title = "لوحة تحكم مجلة مدارك";
     const token = document.cookie.split('; ').find(row => row.startsWith('admin_token='));
     if (!token) {
       router.push('/md-dash/login');
@@ -54,6 +56,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } catch { }
     router.push('/md-dash/login');
   };
+
+  // Auto logout after 30 minutes of inactivity
+  useEffect(() => {
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+    const resetTimer = () => {
+      // Clear existing timer
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+
+      // Set new timer
+      inactivityTimerRef.current = setTimeout(() => {
+        handleLogout();
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    // Events that indicate user activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+    // Reset timer on any user activity
+    events.forEach(event => {
+      document.addEventListener(event, resetTimer);
+    });
+
+    // Initialize timer
+    resetTimer();
+
+    // Cleanup
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      events.forEach(event => {
+        document.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [router]);
 
   const menuItems = [
     { name: 'الرئيسية', icon: LayoutDashboard, path: '/md-dash' },
@@ -112,7 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div className={styles.mainContent}>
         <header className={styles.header}>
-          <h2 className={styles.headerTitle}>لوحة التحكم</h2>
+          <h2 className={styles.headerTitle}>لوحة تحكم مجلة مدارك</h2>
           <button
             type="button"
             className={styles.menuBtn}

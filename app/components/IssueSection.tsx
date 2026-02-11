@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import shareStyles from "./ShareMenu.module.css";
+import PDFViewer from "@/components/PDFViewer";
 /**
  * Reusable issue section component extracted from Home page.
  */
@@ -31,6 +32,7 @@ export default function IssueSection({
 }: IssueSectionProps) {
   const hasPdf = Boolean(downloadHref);
   const [shareOpen, setShareOpen] = useState(false);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const shareRef = useRef<HTMLDivElement | null>(null);
   const shareBtnRef = useRef<HTMLButtonElement | null>(null);
   const [sharePos, setSharePos] = useState<{ top: number; left: number } | null>(null);
@@ -63,19 +65,49 @@ export default function IssueSection({
       setShareOpen(true);
     }
   };
-  const handleDownloadClick: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
+  const handleDownloadClick: React.MouseEventHandler<HTMLAnchorElement> = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!hasPdf) return;
+    
     const abs = makeAbsolutePdfUrl();
-    const a = document.createElement("a");
-    a.href = abs;
-    a.target = "_blank";
-    a.rel = "noopener,noreferrer";
-    a.download = getFileName(abs);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const fileName = getFileName(abs);
+    
+    try {
+      // Fetch the PDF as blob
+      const response = await fetch(abs);
+      const blob = await response.blob();
+      
+      // Create a new blob with explicit PDF type
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.style.display = 'none';
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: try direct download
+      const link = document.createElement('a');
+      link.href = abs;
+      link.download = fileName;
+      link.target = '_self';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
   useEffect(() => {
     const onDocClick = (ev: MouseEvent) => {
@@ -118,17 +150,17 @@ export default function IssueSection({
   return (
     <section className={`issue-section ${shareOpen ? "share-open" : ""}`} style={containerStyle}>
       {hasPdf ? (
-        <a
+        <button
+          type="button"
           className="book-container"
-          href={downloadHref}
-          target="_blank"
-          rel="noreferrer noopener"
+          onClick={() => setPdfViewerOpen(true)}
           aria-label="عرض غلاف العدد"
+          style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }}
         >
           <div className="book">
             <img alt="مجلة مدارك" src={coverSrc} />
           </div>
-        </a>
+        </button>
       ) : (
         <div className="book-container" aria-label="عرض غلاف العدد">
           <div className="book">
@@ -246,16 +278,20 @@ export default function IssueSection({
         <span className="metric-value">{Intl.NumberFormat("ar-EG").format(views)}</span>
       </div>
       <div className="issue-actions" style={{ position: "relative" }}>
-        <Link href={viewHref} className="action-btn action-view">
+        <button
+          type="button"
+          onClick={() => hasPdf && setPdfViewerOpen(true)}
+          className="action-btn action-view"
+          disabled={!hasPdf}
+        >
           <svg className="action-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor" d="M12 5c-5.5 0-9.8 4.4-10.9 6 .9 1.3 4.7 6 10.9 6s10-4.7 10.9-6c-1.1-1.6-5.4-6-10.9-6Zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4Zm0-6.5c-1.4 0-2.5 1.1-2.5 2.5S10.6 13.5 12 13.5s2.5-1.1 2.5-2.5S13.4 8.5 12 8.5Z"/>
           </svg>
           <span>عرض</span>
-        </Link>
+        </button>
         <a
-          href={hasPdf ? makeAbsolutePdfUrl() : "#"}
+          href="#"
           onClick={handleDownloadClick}
-          download={hasPdf ? getFileName(makeAbsolutePdfUrl()) : undefined}
           className="action-btn action-download"
           aria-disabled={hasPdf ? "false" : "true"}
         >
@@ -371,6 +407,14 @@ export default function IssueSection({
           <span>أرشيف المجلة</span>
         </Link>
       </div>
+
+      {/* PDF Viewer Popup */}
+      <PDFViewer
+        pdfUrl={downloadHref}
+        isOpen={pdfViewerOpen}
+        onClose={() => setPdfViewerOpen(false)}
+        title={numberTitle}
+      />
     </section>
   );
 }

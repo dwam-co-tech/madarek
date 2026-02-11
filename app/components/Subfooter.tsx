@@ -166,11 +166,11 @@ export default function Subfooter({
       <footer className={`${styles.subfooter} ${visible ? styles.subfooterVisible : ""}`}>
         <div className={styles.subfooterInner}>
           <div className={styles.footerRowTop}>
-            <div className={styles.footerBrand}>
+            <Link href="/" className={styles.footerBrand}>
               <div className={styles.footerLogoBox}>
                 <Image src="/logo.png" alt="مدارك" width={56} height={56} />
               </div>
-            </div>
+            </Link>
             <nav className={styles.footerLinks}>
               <Link href="/about" className={styles.footerLink}>من نحن</Link>
               <span className={styles.footerSeparator}>.</span>
@@ -214,10 +214,13 @@ export default function Subfooter({
           </div>
           <div className={styles.footerRowBottom}>
             <div className={styles.footerSideLeft}>حقوق النشر والإقتباس متاحة للجميع</div>
-            <div className={styles.footerCenter}><a href="#" target="_blank" rel="noreferrer noopener">www.madarek.com</a></div>
+            <div className={styles.footerCenter}><a href="/" target="_blank" rel="noreferrer noopener">www.madarek.com</a></div>
             <div className={styles.footerSideRight}>
               <span>تواصل معنا</span>
               {/* <Image src="/dwam.png" alt="دوام" width={28} height={28} className={styles.dwamLogo} /> */}
+              <a href="mailto:info@mdarek.net" className={styles.fbInline} aria-label="البريد الإلكتروني">
+                <svg viewBox="0 0 24 24" className={styles.fbIcon} aria-hidden="true"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+              </a>
               <a href="https://www.facebook.com/profile.php?id=61584485048024" target="_blank" rel="noreferrer noopener" className={styles.fbInline} aria-label="فيسبوك">
                 <svg viewBox="0 0 24 24" className={styles.fbIcon} aria-hidden="true"><path fill="currentColor" d="M22 12.06C22 6.49 17.52 2 11.95 2S2 6.49 2 12.06c0 5.01 3.66 9.16 8.44 9.94v-7.03H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.97h-2.34v7.03C18.34 21.22 22 17.07 22 12.06Z" /></svg>
               </a>

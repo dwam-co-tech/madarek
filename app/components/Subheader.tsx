@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getIssue } from "../lib/issues.service";
 import styles from "./subheader.module.css";
 
-export default function Subheader({ issueTitle, dateLabel }: { issueTitle: string; dateLabel: string }) {
+export default function Subheader({ issueTitle, dateLabel, hideBadges = false }: { issueTitle: string; dateLabel: string; hideBadges?: boolean }) {
   const [issueBadge, setIssueBadge] = useState<string>("العدد الأول");
   const [dateBadge, setDateBadge] = useState<string>(dateLabel);
 
@@ -40,15 +40,17 @@ export default function Subheader({ issueTitle, dateLabel }: { issueTitle: strin
   return (
     <header className={styles.subheader}>
       <div className={styles.subheaderInner}>
-        <div className={styles.headerLogo}>
+        <Link href="/" className={styles.headerLogo}>
           <Image src="/logo3.png" alt="مدارك" width={84} height={84} priority />
-        </div>
+        </Link>
         <div className={styles.headerMeta}>
           <h1 className={styles.headerTitle}>{issueTitle}</h1>
-          <div className={styles.headerRow}>
-            <span className={styles.badge}>{issueBadge}</span>
-            <span className={styles.badge}>{dateBadge}</span>
-          </div>
+          {!hideBadges && (
+            <div className={styles.headerRow}>
+              <span className={styles.badge}>{issueBadge}</span>
+              <span className={styles.badge}>{dateBadge}</span>
+            </div>
+          )}
         </div>
         <div className={styles.headerSpacer}>
           <Link href="/" className={styles.homeBtn} aria-label="العودة للرئيسية">

@@ -36,7 +36,7 @@
  
          <div className={styles.statCard}>
            <div className={styles.statHeader}>
-             <span className={styles.statTitle}>عدد الأعداد</span>
+             <span className={styles.statTitle}>إجمالي الأعداد المنشورة</span>
              <div className={`${styles.statIcon} ${styles.green}`}>
                <FileText size={20} />
              </div>
