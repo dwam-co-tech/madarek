@@ -25,7 +25,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background-color: #28a745;
+    background-color: #492100;
     color: white;
     border: none;
     border-radius: 6px;
@@ -35,7 +35,7 @@
 }
 
 .exportButton:hover:not(:disabled) {
-    background-color: #218838;
+    background-color: #884821;
 }
 
 .exportButton:disabled {
@@ -99,7 +99,7 @@
 }
 
 .table thead {
-    background-color: #8B4513;
+    background-color: #412800;
     color: white;
 }
 

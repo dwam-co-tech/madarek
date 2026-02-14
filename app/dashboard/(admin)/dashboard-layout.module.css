@@ -4,6 +4,19 @@
   direction: rtl;
   background-color: #f8fafc;
   font-family: 'Cairo', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Reset for dashboard pages */
+:global(body:has(.container)) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:global(html:has(.container)) {
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Sidebar Styles */
@@ -135,6 +148,8 @@
   position: sticky;
   top: 0;
   z-index: 40;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin: 0;
 }
 
 .headerTitle {

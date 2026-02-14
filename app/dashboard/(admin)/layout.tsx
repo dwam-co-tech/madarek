@@ -41,6 +41,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Check auth
   useEffect(() => {
     document.title = "لوحة تحكم مجلة مدارك";
+    document.body.classList.add("dashboard-page");
+    
     const token = document.cookie.split('; ').find(row => row.startsWith('admin_token='));
     if (!token) {
       router.push('/md-dash/login');
@@ -49,6 +51,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (isAuthor && !allowedAuthorPaths.has(pathname)) {
       router.replace('/md-dash/issues');
     }
+    
+    return () => {
+      document.body.classList.remove("dashboard-page");
+    };
   }, [router, pathname, isAuthor, allowedAuthorPaths]);
 
   const handleLogout = async () => {

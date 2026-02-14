@@ -217,8 +217,14 @@
 }
 
 /* Ensure page content doesn't hide under admin bar */
-:global(body.admin-bar-visible) {
+/* Apply padding only to non-dashboard pages */
+:global(body.admin-bar-visible:not(.dashboard-page)) {
     padding-top: 40px;
+}
+
+/* Remove padding from dashboard pages */
+:global(body.dashboard-page.admin-bar-visible) {
+    padding-top: 0 !important;
 }
 
 /* Remove padding for home page */
@@ -226,11 +232,11 @@
     padding-top: 0;
 }
 
-/* Push down fixed headers when admin bar is visible */
-:global(body.admin-bar-visible header),
-:global(body.admin-bar-visible .header),
-:global(body.admin-bar-visible [class*="header"]),
-:global(body.admin-bar-visible [class*="Header"]) {
+/* Push down fixed headers when admin bar is visible (except dashboard) */
+:global(body.admin-bar-visible:not(.dashboard-page) header),
+:global(body.admin-bar-visible:not(.dashboard-page) .header),
+:global(body.admin-bar-visible:not(.dashboard-page) [class*="header"]),
+:global(body.admin-bar-visible:not(.dashboard-page) [class*="Header"]) {
     top: 40px !important;
 }
 

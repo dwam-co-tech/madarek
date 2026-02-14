@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, FileText } from 'lucide-react';
+import { Eye, FileText, BookOpen } from 'lucide-react';
 import { Users, Database } from 'lucide-react';
 import styles from './dashboard-home.module.css';
 import { getHomeStats } from '@/app/lib/home.service';
@@ -50,7 +50,7 @@ export default function DashboardHome() {
           <div className={styles.statHeader}>
             <span className={styles.statTitle}>إجمالي الأعداد المنشورة</span>
             <div className={`${styles.statIcon} ${styles.green}`}>
-              <FileText size={20} />
+              <BookOpen size={20} />
             </div>
           </div>
           <div className={styles.statValue}>{stats?.issues_count ?? 0}</div>
@@ -59,7 +59,7 @@ export default function DashboardHome() {
         <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <span className={styles.statTitle}>إجمالي المقالات</span>
-            <div className={`${styles.statIcon} ${styles.purple}`}>
+            <div className={`${styles.statIcon} ${styles.brown}`}>
               <FileText size={20} />
             </div>
           </div>
