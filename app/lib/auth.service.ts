@@ -4,6 +4,32 @@ import type { AuthResponse, User, LogoutResponse } from './auth.model';
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
+export async function checkAuth(): Promise<User | null> {
+  const token = getAuthToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(buildApiUrl('/api/user'), {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+
+    if (res.ok) {
+      const user = await res.json() as User;
+      setAuthUser(user);
+      return user;
+    } else {
+      clearAuth();
+      return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch(buildApiUrl('/api/login'), {
     method: 'POST',
@@ -30,7 +56,7 @@ export function setAuth(auth: AuthResponse) {
   try {
     localStorage.setItem(TOKEN_KEY, auth.token);
     localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
-  } catch {}
+  } catch { }
   document.cookie = 'admin_token=true; path=/; max-age=86400';
   document.cookie = `admin_role=${encodeURIComponent(auth.user.role)}; path=/; max-age=86400`;
 }
@@ -59,7 +85,7 @@ export function setAuthUser(user: User | null) {
     } else {
       localStorage.removeItem(USER_KEY);
     }
-  } catch {}
+  } catch { }
   if (user) {
     document.cookie = `admin_role=${encodeURIComponent(user.role)}; path=/; max-age=86400`;
   }
@@ -69,7 +95,7 @@ export function clearAuth() {
   try {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-  } catch {}
+  } catch { }
   document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'admin_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
@@ -87,15 +113,15 @@ export async function logout(): Promise<LogoutResponse> {
   let data: unknown = null;
   try {
     data = await res.json();
-  } catch {}
+  } catch { }
   clearAuth();
   if (!res.ok) {
     const msg =
       typeof data === 'object' && data !== null
         ?
-          ((data as { message?: string; error?: string }).message ||
-            (data as { message?: string; error?: string }).error ||
-            'خطأ في تسجيل الخروج')
+        ((data as { message?: string; error?: string }).message ||
+          (data as { message?: string; error?: string }).error ||
+          'خطأ في تسجيل الخروج')
         : 'خطأ في تسجيل الخروج';
     throw new Error(msg);
   }

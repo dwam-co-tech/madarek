@@ -161,3 +161,18 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
     throw new Error('فشل تحديث المقال');
   }
 }
+
+export async function recordArticleView(id: number | string): Promise<void> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const token = getAuthToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  try {
+    await fetch(buildApiUrl(`/api/articles/${id}/view`), {
+      method: 'POST',
+      headers,
+    });
+  } catch (error) {
+    console.error('Failed to record view', error);
+  }
+}

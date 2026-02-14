@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getIssue, getPublishedIssues } from "./lib/cached-issues.service";
+import { getIssue as getIssueApi } from "./lib/issues.service";
 import type { IssueDetailDTO } from "./lib/issues.model";
 import IssueSection from "./components/IssueSection";
 import PageLoader from "@/components/PageLoader";
@@ -301,6 +302,22 @@ function HomeInner() {
     };
     run();
   }, [params]);
+
+  // Poll for view updates every 5 seconds
+  useEffect(() => {
+    if (!issue?.id) return;
+    const interval = setInterval(() => {
+      getIssueApi(issue.id)
+        .then((updated) => {
+          if (updated.id === issue.id) {
+            setIssue(updated);
+          }
+        })
+        .catch(() => { /* ignore background errors */ });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [issue?.id]);
+
   return (
     <>
       {loading && <PageLoader message="جاري تحميل العدد..." />}

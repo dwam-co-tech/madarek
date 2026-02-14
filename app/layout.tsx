@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cairo, Tajawal, Almarai, Amiri, Noto_Naskh_Arabic, Reem_Kufi, El_Messiri, Lateef } from "next/font/google";
+import AdminBar from "@/components/AdminBar/AdminBar";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -76,7 +77,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={`${cairo.className} ${cairo.variable} ${tajawal.variable} ${almarai.variable} ${amiri.variable} ${notoNaskh.variable} ${reemKufi.variable} ${elMessiri.variable} ${lateef.variable} antialiased`}>{children}</body>
+      <body className={`${cairo.className} ${cairo.variable} ${tajawal.variable} ${almarai.variable} ${amiri.variable} ${notoNaskh.variable} ${reemKufi.variable} ${elMessiri.variable} ${lateef.variable} antialiased`}>
+        <AdminBar />
+        {children}
+      </body>
     </html>
   );
 }

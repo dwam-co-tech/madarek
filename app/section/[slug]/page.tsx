@@ -7,6 +7,7 @@ import styles from "./page.module.css";
 import Subheader from "../../components/Subheader";
 import Subfooter from "../../components/Subfooter";
 import { getIssue, getIssueArticles, getPublishedIssues } from "../../lib/cached-issues.service";
+import { recordArticleView } from "../../lib/articles.service";
 import type { ArticleDTO, IssueDetailDTO } from "../../lib/issues.model";
 import PageLoader from "@/components/PageLoader";
 
@@ -162,8 +163,7 @@ function SectionPageContent() {
                 ]);
 
                 setIssue(issueData);
-                setPdfHref(issueData.pdf_file ?? "");
-
+                
                 const arr = Array.isArray(articlesList) ? articlesList : [];
                 const filtered = arr.filter(
                     (a) => (a.className ?? "").trim() === section.className
@@ -174,6 +174,16 @@ function SectionPageContent() {
                 const first = filtered[0] ?? arr[0];
                 const img = first?.featured_image || issueData.cover_image || "/cover.jpg";
                 setImageSrc(img || "/cover.jpg");
+                
+                // Set PDF: article PDF > issue PDF
+                // Some articles might have a dedicated PDF file
+                const articlePdf = filtered[0]?.pdf_file;
+                setPdfHref(articlePdf || issueData.pdf_file || "");
+
+                // Record view for the displayed article
+                if (filtered.length > 0 && filtered[0]?.id) {
+                    recordArticleView(filtered[0].id);
+                }
 
                 setLoading(false);
             } catch {

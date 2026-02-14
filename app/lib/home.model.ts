@@ -11,6 +11,7 @@ export type MonthViews = {
 export type HomeStatsResponse = {
   year: number;
   issues_count: number;
+  articles_count: number;
   total_views: number;
   issues_by_month: MonthCount[];
   views_by_month: MonthViews[];

@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   BarChart3,
-  Database
+  Database,
+  Mail
 } from 'lucide-react';
 import styles from './dashboard-layout.module.css';
 import { getAuthUser, logout } from '@/app/lib/auth.service';
@@ -100,6 +101,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'إدارة الأعداد', icon: FileText, path: '/md-dash/issues' },
     { name: 'إدارة المقالات', icon: FileText, path: '/md-dash/articles' },
     { name: 'إدارة المشرفين', icon: Users, path: '/md-dash/admins' },
+    { name: 'إدارة المشتركين', icon: Mail, path: '/md-dash/newsletter' },
     { name: 'النسخ الاحتياطي', icon: Database, path: '/md-dash/backup' },
     { name: 'إعدادات الحساب', icon: Settings, path: '/md-dash/account-settings' },
   ];
@@ -118,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <X size={18} />
           {/* <span>إغلاق</span> */}
         </button>
-        <div className={styles.logoArea}>
+        <Link href="/" className={styles.logoArea}>
           <Image
             src="/logo3.png"
             alt="مدارك"
@@ -126,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             height={40}
             className={styles.logo}
           />
-        </div>
+        </Link>
 
         <nav className={styles.nav}>
           {visibleMenuItems.map((item) => (

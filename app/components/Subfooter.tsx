@@ -2,13 +2,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRef, useState } from "react";
+import { NewsletterForm } from "@/components/NewsletterForm";
 import styles from "./subfooter.module.css";
 
 export default function Subfooter({
   visible,
   shareText,
   pdfHref = "/magazine.pdf",
-  translateTo = "en",
+  translateTo: _translateTo = "en",
   showActions = true,
 }: {
   visible: boolean;
@@ -17,12 +18,9 @@ export default function Subfooter({
   translateTo?: string;
   showActions?: boolean;
 }) {
-  const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
-  const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setToastVisible(true);
@@ -45,7 +43,9 @@ export default function Subfooter({
     }
   };
   const handlePrint = () => {
-    const url = makeAbsolutePdfUrl();
+    const pdfUrl = makeAbsolutePdfUrl();
+    const url = `/api/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
+
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
@@ -55,79 +55,44 @@ export default function Subfooter({
     iframe.style.border = "0";
     iframe.src = url;
     document.body.appendChild(iframe);
+
     iframe.onload = () => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      window.setTimeout(() => {
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe);
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {
+          showToast("تعذر فتح الطباعة");
         }
-      }, 1200);
+        window.setTimeout(() => {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        }, 5000);
+      }, 500);
     };
   };
-  const submitEmail = () => {
-    if (!email) {
-      setEmailError("يرجى إدخال البريد الإلكتروني");
-      showToast("يرجى إدخال البريد الإلكتروني");
-      return;
-    }
-    if (!validateEmail(email)) {
-      setEmailError("بريد إلكتروني غير صالح");
-      showToast("بريد إلكتروني غير صالح");
-      return;
-    }
-    setEmailError(null);
-    showToast("تم إرسال البريد");
-  };
-  const handleEmailBlur = () => {
-    if (!email) {
-      setEmailError("يرجى إدخال البريد الإلكتروني");
-      showToast("يرجى إدخال البريد الإلكتروني");
-      return;
-    }
-    if (!validateEmail(email)) {
-      setEmailError("بريد إلكتروني غير صالح");
-      showToast("بريد إلكتروني غير صالح");
-      return;
-    }
-    setEmailError(null);
-  };
   const handleShare = () => {
-    const url = makeAbsolutePdfUrl();
-    const data = { title: "مدارك", text: shareText ?? "مدارك", url };
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    const data = { title: document.title, text: shareText ?? "مدارك", url };
+
     if (navigator.share) {
-      navigator.share(data).catch(() => { });
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).catch(() => { });
+      navigator.share(data).catch((err) => {
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(url)
+            .then(() => showToast("تم نسخ الرابط بنجاح"))
+            .catch(() => { });
+        }
+      });
+    } else {
+      navigator.clipboard.writeText(url)
+        .then(() => showToast("تم نسخ الرابط بنجاح"))
+        .catch(() => showToast("فشل نسخ الرابط"));
     }
   };
   const handleTranslate = () => {
-    if (typeof window === "undefined") return;
-    const { hostname, href } = window.location;
-    const isLocalHostname = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname.endsWith(".local");
-    const isPrivateIpv4 = (() => {
-      const m = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-      if (!m) return false;
-      const a = Number(m[1]);
-      const b = Number(m[2]);
-      if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
-      if (a === 10) return true;
-      if (a === 192 && b === 168) return true;
-      if (a === 172 && b >= 16 && b <= 31) return true;
-      return false;
-    })();
-
-    if (isLocalHostname || isPrivateIpv4) {
-      const title = (document.title ?? "").trim();
-      const bodyText = (document.querySelector("main")?.textContent ?? "").trim();
-      const text = `${title}\n\n${bodyText}`.trim().slice(0, 4000);
-      const params = new URLSearchParams({ sl: "auto", tl: translateTo, text, op: "translate" });
-      window.open(`https://translate.google.com/?${params.toString()}`, "_blank", "noopener,noreferrer");
-      return;
-    }
-
-    const tUrl = `https://translate.google.com/translate?sl=auto&tl=${translateTo}&u=${encodeURIComponent(href)}`;
-    window.open(tUrl, "_blank", "noopener,noreferrer");
+    return;
   };
   return (
     <>
@@ -172,6 +137,8 @@ export default function Subfooter({
               </div>
             </Link>
             <nav className={styles.footerLinks}>
+              <Link href="/archive" className={styles.footerLink}>الأرشيف</Link>
+              <span className={styles.footerSeparator}>.</span>
               <Link href="/about" className={styles.footerLink}>من نحن</Link>
               <span className={styles.footerSeparator}>.</span>
               <Link href="/privacy" className={styles.footerLink}>سياسة الخصوصية</Link>
@@ -180,46 +147,17 @@ export default function Subfooter({
             </nav>
             <div className={styles.footerActions}>
               <div className={styles.footerSubscribe}>
-                <div className={styles.emailField}>
-                  <input
-                    type="email"
-                    placeholder="ادخل الإيميل ليصلك الجديد"
-                    className={styles.emailInput}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onBlur={handleEmailBlur}
-                    aria-invalid={emailError ? "true" : "false"}
-                    aria-describedby="emailError"
-                  />
-                  <button
-                    type="button"
-                    className={styles.emailSubmit}
-                    onClick={submitEmail}
-                    aria-label="إرسال البريد"
-                  >
-                    <svg viewBox="0 0 24 24" className={styles.arrowIcon} aria-hidden="true">
-                      <path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8Z" />
-                    </svg>
-                  </button>
-                </div>
+                <NewsletterForm />
               </div>
             </div>
-          </div>
-          <div
-            className={`${styles.toast} ${toastVisible && toastMsg ? styles.toastVisible : ""}`}
-            role="alert"
-            aria-live="polite"
-          >
-            {toastMsg}
           </div>
           <div className={styles.footerRowBottom}>
             <div className={styles.footerSideLeft}>حقوق النشر والإقتباس متاحة للجميع</div>
             <div className={styles.footerCenter}><a href="/" target="_blank" rel="noreferrer noopener">www.madarek.com</a></div>
             <div className={styles.footerSideRight}>
               <span>تواصل معنا</span>
-              {/* <Image src="/dwam.png" alt="دوام" width={28} height={28} className={styles.dwamLogo} /> */}
               <a href="mailto:info@mdarek.net" className={styles.fbInline} aria-label="البريد الإلكتروني">
-                <svg viewBox="0 0 24 24" className={styles.fbIcon} aria-hidden="true"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                <svg viewBox="0 0 24 24" className={styles.fbIcon} aria-hidden="true"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
               </a>
               <a href="https://www.facebook.com/profile.php?id=61584485048024" target="_blank" rel="noreferrer noopener" className={styles.fbInline} aria-label="فيسبوك">
                 <svg viewBox="0 0 24 24" className={styles.fbIcon} aria-hidden="true"><path fill="currentColor" d="M22 12.06C22 6.49 17.52 2 11.95 2S2 6.49 2 12.06c0 5.01 3.66 9.16 8.44 9.94v-7.03H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.97h-2.34v7.03C18.34 21.22 22 17.07 22 12.06Z" /></svg>
@@ -228,6 +166,13 @@ export default function Subfooter({
           </div>
         </div>
       </footer>
+      <div
+        className={`${styles.toast} ${toastVisible && toastMsg ? styles.toastVisible : ""}`}
+        role="alert"
+        aria-live="polite"
+      >
+        {toastMsg}
+      </div>
     </>
   );
 }
