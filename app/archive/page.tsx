@@ -173,6 +173,7 @@ export default function ArchivePage() {
                     hijriYear={it.hijriLabel}
                     gregorianDate={it.gregLabel}
                     shareText={`مجلة مدارك | ${it.title}`}
+                    viewMode="navigate"
                   />
                 </article>
               ))}
