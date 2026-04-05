@@ -14,7 +14,8 @@ import {
   X,
   BarChart3,
   Database,
-  Mail
+  Mail,
+  Bell
 } from 'lucide-react';
 import styles from './dashboard-layout.module.css';
 import { getAuthUser, logout } from '@/app/lib/auth.service';
@@ -108,6 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'إدارة المقالات', icon: FileText, path: '/md-dash/articles' },
     { name: 'إدارة المشرفين', icon: Users, path: '/md-dash/admins' },
     { name: 'إدارة المشتركين', icon: Mail, path: '/md-dash/newsletter' },
+    { name: 'إدارة الإشعارات', icon: Bell, path: '/md-dash/notifications' },
     { name: 'النسخ الاحتياطي', icon: Database, path: '/md-dash/backup' },
     { name: 'إعدادات الحساب', icon: Settings, path: '/md-dash/account-settings' },
   ];
