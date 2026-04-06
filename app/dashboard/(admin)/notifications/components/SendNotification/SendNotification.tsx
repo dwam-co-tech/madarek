@@ -29,7 +29,7 @@ export default function SendNotification({ onSent }: Props) {
     try {
       const res = await sendNotification({
         title: title.trim(),
-        description: description.trim(),
+        details: description.trim(),
         link: link.trim() || null,
       });
 

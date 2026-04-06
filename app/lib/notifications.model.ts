@@ -9,7 +9,7 @@ export interface Notification {
 
 export interface SendNotificationPayload {
   title: string;
-  description: string;
+  details: string;
   link?: string | null;
 }
 

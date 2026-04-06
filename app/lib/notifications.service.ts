@@ -4,9 +4,30 @@ import type {
   Notification,
   SendNotificationPayload,
   SendNotificationResponse,
-  NotificationsListResponse,
   ApiErrorResponse,
 } from './notifications.model';
+
+type NotificationApiRecord = {
+  id: number;
+  title: string;
+  details?: string | null;
+  description?: string | null;
+  link?: string | null;
+  sent_at?: string | null;
+  created_at?: string | null;
+  status?: 'sent' | 'failed' | 'pending' | string;
+};
+
+function mapNotification(record: NotificationApiRecord): Notification {
+  return {
+    id: record.id,
+    title: record.title,
+    description: record.description ?? record.details ?? '',
+    link: record.link ?? null,
+    sent_at: record.sent_at ?? record.created_at ?? '',
+    status: record.status === 'failed' ? 'failed' : 'sent',
+  };
+}
 
 /**
  * Send a new notification (admin only)
@@ -31,7 +52,10 @@ export async function sendNotification(payload: SendNotificationPayload): Promis
     throw new Error(err.message || 'حدث خطأ أثناء إرسال الإشعار');
   }
 
-  return data as SendNotificationResponse;
+  return {
+    ...data,
+    notification: mapNotification((data as SendNotificationResponse & { notification: NotificationApiRecord }).notification),
+  } as SendNotificationResponse;
 }
 
 /**
@@ -56,9 +80,9 @@ export async function getNotifications(): Promise<Notification[]> {
 
   const data = await res.json();
   // handle various response shapes: { data: [] } | { notifications: [] } | []
-  if (Array.isArray(data)) return data as Notification[];
-  if (Array.isArray(data.data)) return data.data as Notification[];
-  if (Array.isArray(data.notifications)) return data.notifications as Notification[];
+  if (Array.isArray(data)) return (data as NotificationApiRecord[]).map(mapNotification);
+  if (Array.isArray(data.data)) return (data.data as NotificationApiRecord[]).map(mapNotification);
+  if (Array.isArray(data.notifications)) return (data.notifications as NotificationApiRecord[]).map(mapNotification);
   return [] as Notification[];
 }
 
