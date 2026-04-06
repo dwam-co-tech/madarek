@@ -15,7 +15,8 @@ import {
   BarChart3,
   Database,
   Mail,
-  Bell
+  Bell,
+  FolderOpen
 } from 'lucide-react';
 import styles from './dashboard-layout.module.css';
 import { getAuthUser, logout } from '@/app/lib/auth.service';
