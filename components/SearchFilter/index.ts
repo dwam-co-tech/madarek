@@ -1,2 +1,3 @@
+export { SearchFilter } from './SearchFilter';
+export type { SearchFilters, FieldDef, SearchQuery } from './SearchFilter';
 export { default } from './SearchFilter';
-export type { FieldDef, SearchQuery } from './SearchFilter';

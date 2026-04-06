@@ -11,6 +11,9 @@ import type { IssueDetailDTO } from "./lib/issues.model";
 import IssueSection from "./components/IssueSection";
 import PageLoader from "@/components/PageLoader";
 
+// Force dynamic rendering to prevent static optimization with localhost URLs
+export const dynamic = 'force-dynamic';
+
 type MenuItem = {
   label: string;
   href: string;

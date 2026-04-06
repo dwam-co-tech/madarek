@@ -14,7 +14,8 @@ import {
   X,
   BarChart3,
   Database,
-  Mail
+  Mail,
+  FolderOpen
 } from 'lucide-react';
 import styles from './dashboard-layout.module.css';
 import { getAuthUser, logout } from '@/app/lib/auth.service';
@@ -42,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     document.title = "لوحة تحكم مجلة مدارك";
     document.body.classList.add("dashboard-page");
-    
+
     const token = document.cookie.split('; ').find(row => row.startsWith('admin_token='));
     if (!token) {
       router.push('/md-dash/login');
@@ -51,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (isAuthor && !allowedAuthorPaths.has(pathname)) {
       router.replace('/md-dash/issues');
     }
-    
+
     return () => {
       document.body.classList.remove("dashboard-page");
     };
@@ -106,6 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'الرئيسية', icon: LayoutDashboard, path: '/md-dash' },
     { name: 'إدارة الأعداد', icon: FileText, path: '/md-dash/issues' },
     { name: 'إدارة المقالات', icon: FileText, path: '/md-dash/articles' },
+    { name: 'إدارة الملفات', icon: FolderOpen, path: '/md-dash/files' },
     { name: 'إدارة المشرفين', icon: Users, path: '/md-dash/admins' },
     { name: 'إدارة المشتركين', icon: Mail, path: '/md-dash/newsletter' },
     { name: 'النسخ الاحتياطي', icon: Database, path: '/md-dash/backup' },
