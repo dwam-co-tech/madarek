@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import shareStyles from "./ShareMenu.module.css";
@@ -17,6 +18,8 @@ export type IssueSectionProps = {
   gregorianDate: string;
   shareText?: string;
   containerStyle?: CSSProperties;
+  /** "pdf" = open PDF viewer (default), "navigate" = navigate to viewHref */
+  viewMode?: "pdf" | "navigate";
 };
 
 export default function IssueSection({
@@ -29,7 +32,9 @@ export default function IssueSection({
   gregorianDate,
   shareText = "اطلع على عدد المجلة",
   containerStyle,
+  viewMode = "pdf",
 }: IssueSectionProps) {
+  const router = useRouter();
   const hasPdf = Boolean(downloadHref);
   const [shareOpen, setShareOpen] = useState(false);
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
@@ -280,9 +285,15 @@ export default function IssueSection({
       <div className="issue-actions" style={{ position: "relative" }}>
         <button
           type="button"
-          onClick={() => hasPdf && setPdfViewerOpen(true)}
+          onClick={() => {
+            if (viewMode === "navigate") {
+              router.push(viewHref);
+            } else if (hasPdf) {
+              setPdfViewerOpen(true);
+            }
+          }}
           className="action-btn action-view"
-          disabled={!hasPdf}
+          disabled={viewMode === "pdf" && !hasPdf}
         >
           <svg className="action-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor" d="M12 5c-5.5 0-9.8 4.4-10.9 6 .9 1.3 4.7 6 10.9 6s10-4.7 10.9-6c-1.1-1.6-5.4-6-10.9-6Zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4Zm0-6.5c-1.4 0-2.5 1.1-2.5 2.5S10.6 13.5 12 13.5s2.5-1.1 2.5-2.5S13.4 8.5 12 8.5Z"/>

@@ -267,7 +267,18 @@ function HomeInner() {
           return;
         }
 
-        // Always fetch and show the latest published issue
+        // Check if user previously selected an issue (e.g., came back from a section page)
+        const savedIssueId = typeof window !== "undefined" ? localStorage.getItem("selectedIssueId") : null;
+
+        if (savedIssueId) {
+          const d = await getIssue(savedIssueId);
+          setIssue(d);
+          const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
+          setBgUrl(makeAbs(alt));
+          return;
+        }
+
+        // No saved issue — fetch and show the latest published issue
         const published = await getPublishedIssues();
         const pick = (() => {
           const arr = Array.isArray(published) ? published : [];

@@ -52,6 +52,7 @@ function SectionPageContent() {
     const [issue, setIssue] = useState<IssueDetailDTO | null>(null);
     const [issueId, setIssueId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     // Section title and info
     const issueTitle = section?.title ?? "القسم";
@@ -174,6 +175,7 @@ function SectionPageContent() {
                 const first = filtered[0] ?? arr[0];
                 const img = first?.featured_image || issueData.cover_image || "/cover.jpg";
                 setImageSrc(img || "/cover.jpg");
+                setImageLoaded(false);
                 
                 // Set PDF: article PDF > issue PDF
                 // Some articles might have a dedicated PDF file
@@ -214,7 +216,7 @@ function SectionPageContent() {
 
     return (
         <main className={styles.stage}>
-            {loading && <PageLoader message="جاري تحميل المقالات..." />}
+            {(loading || !imageLoaded) && <PageLoader message="جاري تحميل المقالات..." />}
             <Subheader issueTitle={issueTitle} dateLabel={dateLabel} />
 
             <section className={styles.contentArea}>
@@ -239,6 +241,8 @@ function SectionPageContent() {
                                             sizes="(max-width: 640px) 96vw, (max-width: 900px) 94vw, (max-width: 1200px) 32vw, 360px"
                                             style={{ objectFit: "cover" }}
                                             priority
+                                            onLoad={() => setImageLoaded(true)}
+                                            onError={() => setImageLoaded(true)}
                                         />
                                     </div>
                                 </div>
