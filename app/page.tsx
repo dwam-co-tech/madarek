@@ -217,6 +217,30 @@ function makeAbs(u: string) {
   }
 }
 
+function getLatestPublishedIssue(issues: IssueDetailDTO[] | Awaited<ReturnType<typeof getPublishedIssues>>) {
+  const arr = Array.isArray(issues) ? issues : [];
+  if (arr.length === 0) return null;
+
+  return [...arr]
+    .map((it) => {
+      const publishedAt =
+        (it as Record<string, unknown>)["published_at"] ??
+        (it.published_date && it.published_time ? `${it.published_date}T${it.published_time}` : null) ??
+        it.published_date ??
+        it.updated_at ??
+        it.created_at;
+      const timestamp = typeof publishedAt === "string" ? Date.parse(publishedAt) : 0;
+      const fallbackOrder = it.issue_number ?? it.id ?? 0;
+
+      return {
+        issue: it,
+        timestamp: Number.isFinite(timestamp) ? timestamp : 0,
+        fallbackOrder,
+      };
+    })
+    .sort((a, b) => b.timestamp - a.timestamp || b.fallbackOrder - a.fallbackOrder)[0]?.issue ?? null;
+}
+
 function HomeInner() {
   const params = useSearchParams();
   const [issue, setIssue] = useState<IssueDetailDTO | null>(null);
@@ -267,33 +291,10 @@ function HomeInner() {
           return;
         }
 
-        // Check if user previously selected an issue (e.g., came back from a section page)
-        const savedIssueId = typeof window !== "undefined" ? localStorage.getItem("selectedIssueId") : null;
-
-        if (savedIssueId) {
-          const d = await getIssue(savedIssueId);
-          setIssue(d);
-          const alt = d.cover_image_alt || d.cover_image || "/cover.jpg";
-          setBgUrl(makeAbs(alt));
-          return;
-        }
-
-        // No saved issue — fetch and show the latest published issue
+        // Normal visits should always show the latest published issue.
+        // localStorage is only a navigation hint for section pages, not the homepage source of truth.
         const published = await getPublishedIssues();
-        const pick = (() => {
-          const arr = Array.isArray(published) ? published : [];
-          if (arr.length === 0) return null;
-          const withDate = arr
-            .map((it) => ({
-              it,
-              ts:
-                Date.parse((it as Record<string, unknown>)["published_at"] as string) ||
-                Date.parse((it as Record<string, unknown>)["updated_at"] as string) ||
-                0,
-            }))
-            .sort((a, b) => b.ts - a.ts)[0]?.it;
-          return withDate ?? arr.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
-        })();
+        const pick = getLatestPublishedIssue(published);
 
         if (pick) {
           const d = await getIssue(pick.id);
