@@ -5,7 +5,7 @@ import axios from 'axios';
 import { Search, Filter, Download, Copy, ExternalLink, Calendar, FileText, Image, Video, Music, File as FileIcon, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://back.mdarek.net/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://madarek-backend.test/api';
 
 interface ArchivedFile {
     id: number;

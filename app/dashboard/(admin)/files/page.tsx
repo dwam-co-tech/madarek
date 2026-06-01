@@ -10,7 +10,7 @@ import { Upload, Archive, FolderOpen } from 'lucide-react';
 import axios from 'axios';
 import styles from './files.module.css';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://back.mdarek.net/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://madarek-backend.test/api';
 
 // Helper function to get auth token from localStorage
 const getAuthToken = (): string | null => {

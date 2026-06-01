@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const target = new URL(url);
     const allowedOrigins = new Set<string>([
+      'http://madarek-backend.test',
       'https://back.mdarek.net',
       'http://127.0.0.1:8000',
     ]);

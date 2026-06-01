@@ -145,7 +145,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link
               key={item.path}
               href={item.path}
-              className={`${styles.navLink} ${pathname === item.path ? styles.activeNavLink : ''}`}
+              className={`${styles.navLink} ${(pathname === item.path || pathname.startsWith(`${item.path}/`)) ? styles.activeNavLink : ''}`}
             >
               <item.icon size={20} />
               <span>{item.name}</span>

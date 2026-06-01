@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://back.mdarek.net';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://madarek-backend.test';
 
 export const buildApiUrl = (path: string) => {
   const p = path.startsWith('/') ? path : `/${path}`;
