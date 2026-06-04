@@ -26,15 +26,16 @@ type MenuItem = {
 
 // Section items - now using dynamic route with issueId
 const sectionItems: MenuItem[] = [
-  { label: "افتتــاحية الــعدد", href: "/section/editorial-opening", className: "arc-opening" },
-  { label: "قــاموس المصطلحـات", href: "/section/glossary", className: "arc-glossary" },
-  { label: "شخـصيــات صوفـيــة", href: "/section/profiles", className: "arc-profiles" },
-  { label: "إحصــائيات وتحليلات", href: "/section/stats", className: "arc-stats" },
-  { label: "الصوفية حول العالم", href: "/section/news", className: "arc-news" },
-  { label: "شبهــات تحت المجهر", href: "/section/refutations", className: "arc-refutations" },
-  { label: "خـزّانــة الوثــائق", href: "/section/documents-lectures", className: "arc-archive" },
-  { label: "مـحـطــات تـاريخية", href: "/section/history", className: "arc-history" },
-  { label: "عـصــارة الـكـتــب", href: "/section/library", className: "arc-library" },
+  { label: "افتتــاحية الــعدد", href: "/sections/editorial-opening", className: "arc-opening" },
+  { label: "قــاموس المصطلحـات", href: "/sections/glossary", className: "arc-glossary" },
+  { label: "شخـصيــات صوفـيــة", href: "/sections/profiles", className: "arc-profiles" },
+  { label: "إحصــائيات وتحليلات", href: "/sections/stats", className: "arc-stats" },
+  { label: "الصوفية حول العالم", href: "/sections/news", className: "arc-news" },
+  { label: "شبهــات تحت المجهر", href: "/sections/refutations", className: "arc-refutations" },
+  { label: "خـزّانــة الوثــائق", href: "/sections/documents-lectures", className: "arc-archive" },
+  { label: "مـحـطــات تـاريخية", href: "/sections/history", className: "arc-history" },
+  { label: "عـصــارة الـكـتــب", href: "/sections/library", className: "arc-library" },
+  { label: "مقالات", href: "/sections/articles", className: "arc-articles" },
 ];
 
 function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null; startAnimation?: boolean }) {
@@ -53,6 +54,7 @@ function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null
     "#c6a270",
     "#d7b98d",
     "#e6ccab",
+    "#eddac2",
   ];
 
   useEffect(() => {

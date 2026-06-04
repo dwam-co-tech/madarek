@@ -12,8 +12,8 @@ function RedirectContent() {
       (typeof window !== "undefined" ? localStorage.getItem("selectedIssueId") : null);
 
     const targetUrl = issueId
-      ? `/section/refutations?issueId=${issueId}`
-      : "/section/refutations";
+      ? `/sections/refutations?issueId=${issueId}`
+      : "/sections/refutations";
 
     router.replace(targetUrl);
   }, [router, searchParams]);

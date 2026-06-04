@@ -861,6 +861,11 @@ main.home-stage {
   --offset-y: 0px;
 }
 
+.arc-articles {
+  --offset-x: -18px;
+  --offset-y: -8px;
+}
+
 @media (max-width: 640px) {
 
   html,

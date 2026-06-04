@@ -6,7 +6,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import Subheader from "../../components/Subheader";
 import Subfooter from "../../components/Subfooter";
-import { getIssue, getIssueArticles, getPublishedIssues } from "../../lib/cached-issues.service";
+import { getIssue, getIssueArticles, getPublishedIssues, getIssueSections } from "../../lib/cached-issues.service";
 import { recordArticleView } from "../../lib/articles.service";
 import type { ArticleDTO, IssueDetailDTO } from "../../lib/issues.model";
 import PageLoader from "@/components/PageLoader";
@@ -22,6 +22,7 @@ const SECTIONS: Record<string, { className: string; title: string }> = {
     "documents-lectures": { className: "arc-archive", title: "خزانة الوثائق" },
     "history": { className: "arc-history", title: "محطات تاريخية" },
     "library": { className: "arc-library", title: "عصارة الكتب" },
+    "articles": { className: "arc-articles", title: "مقالات" },
 };
 
 function stripLinks(html: string) {
@@ -43,6 +44,7 @@ function SectionPageContent() {
 
     // Priority: 1. URL query param, 2. localStorage, 3. fetch latest
     const issueIdParam = searchParams.get("issueId");
+    const articleIdParam = searchParams.get("articleId");
 
     const [footerVisible, setFooterVisible] = useState(false);
     const footerSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -166,9 +168,41 @@ function SectionPageContent() {
                 setIssue(issueData);
                 
                 const arr = Array.isArray(articlesList) ? articlesList : [];
-                const filtered = arr.filter(
-                    (a) => (a.className ?? "").trim() === section.className
-                );
+                let filtered: ArticleDTO[] = [];
+
+                if (slug === "articles") {
+                    let articlesSectionId: number | null = null;
+                    try {
+                        const sectionsList = issueData.sections || await getIssueSections(issueId);
+                        const secObj = sectionsList.find(s => s.key === "articles" || s.slug === "articles" || s.title === "مقالات");
+                        if (secObj) {
+                            articlesSectionId = secObj.id;
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch sections in article detail", e);
+                    }
+
+                    filtered = arr.filter(
+                        (a) => 
+                            (a.className ?? "").trim() === "arc-articles" ||
+                            (articlesSectionId !== null && a.issue_section_id === articlesSectionId) ||
+                            (!a.issue_section_id && !(a.className ?? "").trim())
+                    );
+                } else {
+                    filtered = arr.filter(
+                        (a) => (a.className ?? "").trim() === section.className
+                    );
+                }
+
+                // If articleId query param is provided, re-order/filter so the target article is first
+                if (articleIdParam) {
+                    const targetId = Number(articleIdParam);
+                    const targetArticle = arr.find(a => a.id === targetId);
+                    if (targetArticle) {
+                        filtered = [targetArticle, ...filtered.filter(a => a.id !== targetId)];
+                    }
+                }
+
                 setArticles(filtered);
 
                 // Set image: article featured image > issue cover
