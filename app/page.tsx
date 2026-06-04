@@ -377,6 +377,32 @@ function HomeInner() {
             <span className="footer-separator" style={{ color: "var(--beige-100)" }}>.</span>
             <Link href="/terms" className="footer-link">الشروط والأحكام</Link>
           </nav>
+          <div className="footer-store-links" aria-label="تحميل تطبيق مدارك">
+            <a
+              className="store-btn"
+              href="https://play.google.com/store/apps/details?id=com.mdarek.application"
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label="تحميل تطبيق مدارك من Google Play"
+            >
+              <svg className="store-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M5.2 3.6c-.35.19-.57.56-.57 1.02v14.76c0 .46.22.83.57 1.02l8.03-8.4-8.03-8.4Zm9.04 7.36 2.12-2.22L7.35 3.6l6.89 7.36Zm2.12 4.3-2.12-2.22-6.89 7.36 9.01-5.14Zm1.1-5.9L15.28 12l2.18 2.64 1.4-.8c.84-.48.84-1.2 0-1.68l-1.4-.8Z" />
+              </svg>
+              <span>Google Play</span>
+            </a>
+            <a
+              className="store-btn"
+              href="https://apps.apple.com/eg/app/%D9%85%D8%AC%D9%84%D8%A9-%D9%85%D8%AF%D8%A7%D8%B1%D9%83/id6766868982"
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label="تحميل تطبيق مدارك من App Store"
+            >
+              <svg className="store-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M16.9 2.4c.05 1.03-.35 2.03-1.06 2.78-.72.77-1.9 1.34-2.93 1.25-.1-.99.42-2.06 1.07-2.75.74-.79 2.02-1.39 2.92-1.28Zm3.02 15.12c-.51 1.16-.75 1.68-1.41 2.72-.92 1.41-2.21 3.17-3.82 3.19-1.43.02-1.8-.92-3.74-.91-1.94.01-2.35.93-3.78.91-1.61-.02-2.84-1.6-3.76-3.01-2.57-3.95-2.84-8.59-1.25-11.06 1.13-1.75 2.92-2.78 4.6-2.78 1.71 0 2.79.94 4.21.94 1.38 0 2.22-.94 4.21-.94 1.5 0 3.09.82 4.21 2.23-3.7 2.03-3.1 7.31.53 8.71Z" />
+              </svg>
+              <span>App Store</span>
+            </a>
+          </div>
           <div className="footer-domain" ><a href="#" target="_blank" rel="noreferrer noopener">www.madarek.com</a></div>
           <div className="footer-legal">
             <a href="https://www.facebook.com/profile.php?id=61584485048024&sk=about" target="_blank" rel="noreferrer noopener" className="fb-btn" aria-label="فيسبوك">
