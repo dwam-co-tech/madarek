@@ -44,10 +44,24 @@ export type ReferenceItem = {
   url: string;
 };
 
+export type IssueSection = {
+  id: number;
+  issue_id: number;
+  title: string;
+  slug: string;
+  key: string;
+  sort_order: number;
+  is_active: boolean | number;
+  articles_count?: number;
+  articles?: ArticleDTO[];
+};
+
 export type ArticleDTO = {
   id: number;
   user_id: number;
   issue_id: number;
+  issue_section_id?: number | null;
+  issue_section?: IssueSection | null;
   title: string;
   open_title?: string | null;
   slug: string;
@@ -90,6 +104,7 @@ export type IssueDetailDTO = {
   created_at: string;
   updated_at: string;
   articles: ArticleDTO[];
+  sections?: IssueSection[];
 };
 
 export type DeleteIssueResponse = {

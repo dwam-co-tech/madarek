@@ -7,9 +7,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import styles from './manage.module.css';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor';
-import { getArticleById, updateArticle } from '@/app/lib/articles.service';
+import { getArticleById, updateArticle, createArticle } from '@/app/lib/articles.service';
+import { getIssueSections } from '@/app/lib/issues.service';
 import type { ArticleDetailResponse } from '@/app/lib/articles.model';
-import type { ArticleDTO } from '@/app/lib/issues.model';
+import type { ArticleDTO, IssueSection } from '@/app/lib/issues.model';
 
 type EditableFields = {
   title: string;
@@ -22,6 +23,7 @@ type EditableFields = {
   status: string;
   className: string;
   content: string;
+  issue_section_id: string;
 };
 
 function formatDateTime(value?: string | null): string {
@@ -42,9 +44,11 @@ function ManageArticlePageInner() {
   const params = useSearchParams();
   const articleId = params.get('id');
   const issueId = params.get('issue_id');
+  const issueSectionIdParam = params.get('issue_section_id');
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [article, setArticle] = React.useState<ArticleDTO | null>(null);
+  const [sections, setSections] = React.useState<IssueSection[]>([]);
   const [form, setForm] = React.useState<EditableFields>({
     title: '',
     open_title: '',
@@ -53,9 +57,10 @@ function ManageArticlePageInner() {
     gregorian_date: '',
     hijri_date: '',
     references: '',
-    status: '',
+    status: 'published',
     className: '',
     content: '',
+    issue_section_id: '',
   });
   const [toast, setToast] = React.useState<string | null>(null);
   const [featuredImageFile, setFeaturedImageFile] = React.useState<File | null>(null);
@@ -67,10 +72,54 @@ function ManageArticlePageInner() {
   const [refTitleInput, setRefTitleInput] = React.useState<string>('');
   const [refLinkInput, setRefLinkInput] = React.useState<string>('');
 
+  const effectiveIssueId = article ? article.issue_id : (issueId ? Number(issueId) : null);
+
+  // Load sections whenever the issue ID becomes available
   React.useEffect(() => {
+    if (!effectiveIssueId) return;
+    let alive = true;
+    const loadSections = async () => {
+      try {
+        const list = await getIssueSections(effectiveIssueId);
+        if (alive) {
+          list.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          setSections(list);
+        }
+      } catch (err) {
+        console.error("Failed to load sections", err);
+      }
+    };
+    loadSections();
+    return () => {
+      alive = false;
+    };
+  }, [effectiveIssueId]);
+
+  // Load article if editing, or prefill from query parameters if creating
+  React.useEffect(() => {
+    if (!articleId) {
+      // Create mode
+      setForm({
+        title: '',
+        open_title: '',
+        keywords: '',
+        author_name: '',
+        gregorian_date: '',
+        hijri_date: '',
+        references: '',
+        status: 'published',
+        className: '',
+        content: '',
+        issue_section_id: issueSectionIdParam ? String(issueSectionIdParam) : '',
+      });
+      setArticle(null);
+      setReferencesItems([]);
+      setRemovedIndices([]);
+      return;
+    }
+
     let alive = true;
     const load = async () => {
-      if (!articleId) return;
       setIsLoading(true);
       try {
         const resp: ArticleDetailResponse = await getArticleById(articleId);
@@ -85,21 +134,22 @@ function ManageArticlePageInner() {
           gregorian_date: a.gregorian_date ?? '',
           hijri_date: a.hijri_date ?? '',
           references: a.references_tmp ?? '',
-          status: a.status ?? '',
+          status: a.status ?? 'published',
           className: a.className ?? '',
           content: a.content ?? '',
+          issue_section_id: a.issue_section_id ? String(a.issue_section_id) : '',
         });
         const initialRefs = Array.isArray(a.references) ? a.references : [];
         setReferencesItems(initialRefs.map((ref, idx) => {
           if (typeof ref === 'object' && ref !== null) {
             return { title: ref.title || '', url: ref.url || '', originIndex: idx };
           }
-          // Backward compatibility for old string references
           const refStr = typeof ref === 'string' ? ref : '';
           return { title: refStr, url: refStr, originIndex: idx };
         }));
         setRemovedIndices([]);
-      } catch {
+      } catch (err) {
+        console.error(err);
         if (!alive) return;
         setArticle(null);
       } finally {
@@ -110,7 +160,7 @@ function ManageArticlePageInner() {
     return () => {
       alive = false;
     };
-  }, [articleId]);
+  }, [articleId, issueSectionIdParam]);
 
   const onChange = <K extends keyof EditableFields>(key: K, value: EditableFields[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -148,48 +198,78 @@ function ManageArticlePageInner() {
   };
 
   const save = async () => {
-    if (!articleId) return;
+    const finalIssueId = article ? article.issue_id : (issueId ? Number(issueId) : null);
+    if (!finalIssueId) {
+      setToast('يرجى تحديد العدد أولاً');
+      window.setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const allRefs = referencesItems.filter((it) => it.title.trim() || it.url.trim()).map((it) => ({ title: it.title.trim(), url: it.url.trim() }));
-      const payload = {
-        title: form.title,
-        open_title: form.open_title,
-        keywords: form.keywords,
-        author_name: form.author_name,
-        gregorian_date: form.gregorian_date,
-        hijri_date: form.hijri_date,
-        references: allRefs,
-        references_tmp: form.references,
-        references_remove_indexes: removedIndices,
-        status: form.status,
-        className: form.className,
-        content: form.content,
-        featured_image: featuredImageFile ?? undefined,
-        pdf_file: pdfFile ?? undefined,
-      };
-      const res = await updateArticle(articleId, payload);
-      const updated = res.article;
-      setArticle(updated);
-      const updatedRefs = Array.isArray(updated.references) ? updated.references : [];
-      setReferencesItems(updatedRefs.map((ref, idx) => {
-        if (typeof ref === 'object' && ref !== null) {
-          return { title: (ref as { title?: string }).title || '', url: (ref as { url?: string }).url || '', originIndex: idx };
-        }
-        const refStr = typeof ref === 'string' ? ref : '';
-        return { title: refStr, url: refStr, originIndex: idx };
-      }));
-      setRemovedIndices([]);
-      const msgLower = (res.message || '').toLowerCase();
-      const created = msgLower.includes('created') || res.message?.includes('تم إنشاء');
-      const updatedMsg = msgLower.includes('updated') || res.message?.includes('تم تحديث');
-      const toastMsg = created
-        ? 'تم إنشاء المقالة بنجاح'
-        : updatedMsg
-          ? 'تم تحديث المقالة بنجاح'
-          : res.message || 'تم حفظ المقال بنجاح';
-      setToast(toastMsg);
-      window.setTimeout(() => setToast(null), 3000);
+      const parsedSectionId = form.issue_section_id ? Number(form.issue_section_id) : null;
+
+      if (articleId) {
+        // Edit mode
+        const payload = {
+          title: form.title,
+          open_title: form.open_title,
+          keywords: form.keywords,
+          author_name: form.author_name,
+          gregorian_date: form.gregorian_date,
+          hijri_date: form.hijri_date,
+          references: allRefs,
+          references_tmp: form.references,
+          references_remove_indexes: removedIndices,
+          status: form.status,
+          className: form.className,
+          content: form.content,
+          featured_image: featuredImageFile ?? undefined,
+          pdf_file: pdfFile ?? undefined,
+          issue_section_id: parsedSectionId,
+        };
+        const res = await updateArticle(articleId, payload);
+        const updated = res.article;
+        setArticle(updated);
+        const updatedRefs = Array.isArray(updated.references) ? updated.references : [];
+        setReferencesItems(updatedRefs.map((ref, idx) => {
+          if (typeof ref === 'object' && ref !== null) {
+            return { title: (ref as { title?: string }).title || '', url: (ref as { url?: string }).url || '', originIndex: idx };
+          }
+          const refStr = typeof ref === 'string' ? ref : '';
+          return { title: refStr, url: refStr, originIndex: idx };
+        }));
+        setRemovedIndices([]);
+        setToast('تم تحديث المقالة بنجاح');
+        window.setTimeout(() => setToast(null), 3000);
+      } else {
+        // Create mode
+        const payload = {
+          title: form.title || 'مقال جديد',
+          open_title: form.open_title || form.title || 'مقال جديد',
+          keywords: form.keywords,
+          author_name: form.author_name,
+          gregorian_date: form.gregorian_date,
+          hijri_date: form.hijri_date,
+          references: allRefs,
+          references_tmp: form.references,
+          status: form.status || 'published',
+          className: form.className,
+          content: form.content,
+          featured_image: featuredImageFile ?? undefined,
+          pdf_file: pdfFile ?? undefined,
+          issue_section_id: parsedSectionId,
+        };
+        const dummySectionId = parsedSectionId ? parsedSectionId : 1;
+        await createArticle(dummySectionId, finalIssueId, payload);
+        
+        setToast('تم إنشاء المقالة بنجاح');
+        window.setTimeout(() => {
+          setToast(null);
+          router.push(backHref);
+        }, 2000);
+      }
     } catch (err) {
       setToast(err instanceof Error ? err.message : 'حدث خطأ أثناء حفظ المقال');
       window.setTimeout(() => setToast(null), 4000);
@@ -198,14 +278,17 @@ function ManageArticlePageInner() {
     }
   };
 
+  const finalBackIssueId = article ? String(article.issue_id) : (issueId ?? '');
   const backHref =
-    issueId && issueId.trim() !== '' ? `/md-dash/articles?id=${encodeURIComponent(issueId)}` : '/md-dash/articles';
+    finalBackIssueId && finalBackIssueId.trim() !== '' ? `/md-dash/articles?id=${encodeURIComponent(finalBackIssueId)}` : '/md-dash/articles';
+
+  const selectedSection = sections.find(s => String(s.id) === form.issue_section_id);
 
   return (
     <div className={styles.page}>
       <LoadingOverlay open={isLoading} label="جاري التحميل..." ariaLabel="جاري التحميل" />
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>إدارة المحتوى</h1>
+        <h1 className={styles.pageTitle}>{articleId ? 'تعديل المقال' : 'إضافة مقال جديد'}</h1>
         <div className={styles.headerActions}>
           <Link href={backHref} className={styles.backBtn}>
             العودة للمقالات
@@ -213,46 +296,85 @@ function ManageArticlePageInner() {
         </div>
       </div>
 
-      {!article ? (
+      {articleId && !article ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyTitle}>لم يتم العثور على المقال</div>
           <div className={styles.emptyHint}>تأكد من المعرّفات المرسلة عبر الرابط</div>
         </div>
       ) : (
         <React.Fragment>
-          <div className={styles.previewCard}>
-            <div className={styles.previewInfo}>
-              <div className={styles.previewTitle}>{article.title}</div>
-              <div className={styles.previewMeta}>
-                <span>المعرف: {article.id}</span>
-                <span>رقم العدد: {article.issue_id}</span>
-                <span>المستخدم: {article.user_id}</span>
-                <span>المشاهدات: {article.views_count ?? 0}</span>
+          {article && (
+            <div className={styles.previewCard}>
+              <div className={styles.previewInfo}>
+                <div className={styles.previewTitle}>{article.title}</div>
+                <div className={styles.previewMeta}>
+                  <span>المعرف: {article.id}</span>
+                  <span>رقم العدد: {article.issue_id}</span>
+                  <span>المستخدم: {article.user_id}</span>
+                  <span>المشاهدات: {article.views_count ?? 0}</span>
+                </div>
+              </div>
+              <div className={styles.previewImageWrap}>
+                <Image
+                  src={featuredPreview || article.featured_image || '/cover.jpg'}
+                  alt={article.title || 'صورة المقال'}
+                  width={320}
+                  height={200}
+                  className={styles.previewImage}
+                />
               </div>
             </div>
-            <div className={styles.previewImageWrap}>
-              <Image
-                src={featuredPreview || article.featured_image || '/cover.jpg'}
-                alt={article.title || 'صورة المقال'}
-                width={320}
-                height={200}
-                className={styles.previewImage}
-              />
-            </div>
-          </div>
+          )}
 
           <div className={styles.formGrid}>
             <div className={styles.formCard}>
               <div className={styles.cardTitle}>البيانات الأساسية</div>
               <div className={styles.field}>
-                <label className={styles.label}>العنوان</label>
+                <label className={styles.label}>العنوان الرئيسي</label>
+                <input
+                  className={styles.input}
+                  value={form.title}
+                  onChange={(e) => {
+                    onChange('title', e.target.value);
+                    if (!form.open_title || form.open_title === form.title) {
+                      onChange('open_title', e.target.value);
+                    }
+                  }}
+                  placeholder="العنوان الرئيسي للمقال"
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>عنوان العرض (Open Title)</label>
                 <input
                   className={styles.input}
                   value={form.open_title}
                   onChange={(e) => onChange('open_title', e.target.value)}
-                  placeholder="عنوان المقال"
+                  placeholder="عنوان العرض في الصفحة"
                 />
               </div>
+              
+              <div className={styles.field}>
+                <label className={styles.label}>القسم (التبويب)</label>
+                <select
+                  className={styles.input}
+                  value={form.issue_section_id}
+                  onChange={(e) => onChange('issue_section_id', e.target.value)}
+                  disabled={!articleId} // Lock the section when creating
+                >
+                  <option value="">بدون قسم (مقالات غير مصنفة)</option>
+                  {sections.map((sec) => (
+                    <option key={sec.id} value={sec.id}>
+                      {sec.title}
+                    </option>
+                  ))}
+                </select>
+                {!articleId && selectedSection && (
+                  <span style={{ fontSize: '0.85rem', color: '#634722c5', marginTop: '4px', display: 'block' }}>
+                    القسم المختار: {selectedSection.title} (مغلق)
+                  </span>
+                )}
+              </div>
+
               <div className={styles.field}>
                 <label className={styles.label}>صورة المقال</label>
                 <input
@@ -270,11 +392,11 @@ function ManageArticlePageInner() {
                   className={styles.input}
                   onChange={onPickPdf}
                 />
-                {(pdfFile || article.pdf_file) && (
+                {(pdfFile || (article && article.pdf_file)) && (
                   <div className={styles.metaValue} style={{ marginTop: '0.5rem' }}>
                     {pdfFile ? (
                       <span>تم اختيار: {pdfFile.name}</span>
-                    ) : article.pdf_file ? (
+                    ) : article && article.pdf_file ? (
                       <a href={article.pdf_file} target="_blank" rel="noopener noreferrer">
                         عرض ملف PDF الحالي
                       </a>
@@ -282,33 +404,10 @@ function ManageArticlePageInner() {
                   </div>
                 )}
               </div>
-              {/* <div className={styles.fieldRow}>
-                <div className={styles.field}>
-                  <label className={styles.label}>الحالة</label>
-                  <select
-                    className={styles.input}
-                    value={form.status}
-                    onChange={(e) => onChange('status', e.target.value)}
-                  >
-                    <option value="">—</option>
-                    <option value="draft">مسودة</option>
-                    <option value="published">منشور</option>
-                  </select>
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>التصنيف (className)</label>
-                  <input
-                    className={styles.input}
-                    value={form.className}
-                    onChange={(e) => onChange('className', e.target.value)}
-                    placeholder="مثل: arc-opening"
-                  />
-                </div>
-              </div> */}
               <div className={styles.fieldRow}>
                 <div className={styles.field}>
                   <label className={styles.label}>Slug</label>
-                  <input className={styles.input} value={article.slug} readOnly />
+                  <input className={styles.input} value={article?.slug ?? ''} readOnly placeholder="يتم توليده تلقائياً" />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>الكلمات المفتاحية</label>
@@ -368,27 +467,20 @@ function ManageArticlePageInner() {
                 <div className={styles.metaGrid}>
                   <div className={styles.metaItem}>
                     <span className={styles.metaKey}>تاريخ النشر</span>
-                    <span className={styles.metaValue}>{formatDateTime(article.published_at)}</span>
+                    <span className={styles.metaValue}>{article ? formatDateTime(article.published_at) : '-'}</span>
                   </div>
                   <div className={styles.metaItem}>
                     <span className={styles.metaKey}>تاريخ الإنشاء</span>
-                    <span className={styles.metaValue}>{formatDateTime(article.created_at)}</span>
+                    <span className={styles.metaValue}>{article ? formatDateTime(article.created_at) : '-'}</span>
                   </div>
                   <div className={styles.metaItem}>
                     <span className={styles.metaKey}>تاريخ التحديث</span>
-                    <span className={styles.metaValue}>{formatDateTime(article.updated_at)}</span>
+                    <span className={styles.metaValue}>{article ? formatDateTime(article.updated_at) : '-'}</span>
                   </div>
                 </div>
               </div>
 
               <div className={styles.formCard}>
-                {/* <div className={styles.cardTitle}>المراجع</div>
-                <textarea
-                  className={styles.textarea}
-                  value={form.references}
-                  onChange={(e) => onChange('references', e.target.value)}
-                  placeholder="أدخل المراجع هنا"
-                /> */}
                 <div className={styles.cardTitle}>المراجع</div>
                 <div className={styles.fieldRow} style={{ gap: '0.5rem', marginBottom: '0.75rem' }}>
                   <input
@@ -503,7 +595,7 @@ function ManageArticlePageInner() {
                 إلغاء
               </button>
             </div>
-         </div>
+          </div>
 
         </React.Fragment>
       )}

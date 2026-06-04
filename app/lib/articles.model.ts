@@ -46,9 +46,33 @@ export type UpdateArticlePayload = {
   className?: string;
   featured_image?: File;
   pdf_file?: File;
+  issue_id?: number;
+  issue_section_id?: number | null;
 };
 
 export type UpdateArticleResponse = {
+  message: string;
+  article: import('./issues.model').ArticleDTO;
+};
+
+export type CreateArticlePayload = {
+  title: string;
+  content?: string;
+  open_title?: string;
+  keywords?: string;
+  author_name?: string;
+  gregorian_date?: string;
+  hijri_date?: string;
+  references?: ReferenceItem[];
+  references_tmp?: string;
+  status?: string;
+  className?: string;
+  featured_image?: File;
+  pdf_file?: File;
+  issue_section_id?: number | null;
+};
+
+export type CreateArticleResponse = {
   message: string;
   article: import('./issues.model').ArticleDTO;
 };

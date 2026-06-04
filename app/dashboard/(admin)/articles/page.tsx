@@ -3,10 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import styles from '../articles.module.css';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { getIssue } from '@/app/lib/issues.service';
-import type { ArticleDTO } from '@/app/lib/issues.model';
+import { getIssue, getIssueSections, getSectionArticles } from '@/app/lib/issues.service';
+import type { ArticleDTO, IssueSection } from '@/app/lib/issues.model';
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor';
 import { getArticleById, updateArticle } from '@/app/lib/articles.service';
 
@@ -18,6 +19,7 @@ type Article = {
   issueTitle?: string;
   views: number;
   content?: string | null;
+  issue_section_id?: number | null;
 };
 
 function ArticlesAdminPageInner() {
@@ -26,6 +28,8 @@ function ArticlesAdminPageInner() {
   const issueIdParam = params.get('id');
   const [isLoading, setIsLoading] = React.useState(false);
   const [articles, setArticles] = React.useState<Article[]>([]);
+  const [sections, setSections] = React.useState<(IssueSection & { articles: Article[] })[]>([]);
+  const [hasSections, setHasSections] = React.useState(false);
   const [issueTitle, setIssueTitle] = React.useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editorArticle, setEditorArticle] = React.useState<Article | null>(null);
@@ -46,6 +50,14 @@ function ArticlesAdminPageInner() {
       try {
         const issueIdNum = Number(issueIdParam);
         const det = await getIssue(issueIdNum);
+        
+        let sectionsList: IssueSection[] = [];
+        try {
+          sectionsList = det.sections && Array.isArray(det.sections) ? det.sections : await getIssueSections(issueIdNum);
+        } catch (e) {
+          console.error("Failed to load sections", e);
+        }
+
         const mapped: Article[] = det.articles.map((a: ArticleDTO) => ({
           id: String(a.id),
           title: a.title,
@@ -54,13 +66,79 @@ function ArticlesAdminPageInner() {
           issueTitle: det.title,
           views: (a.views_count ?? 0) as number,
           content: a.content ?? null,
+          issue_section_id: a.issue_section_id ?? null,
         }));
+
         if (!alive) return;
         setIssueTitle(det.title);
         setArticles(mapped);
-      } catch {
+
+        if (sectionsList && sectionsList.length > 0) {
+          sectionsList.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          
+          const articlesSec = sectionsList.find(s => s.title === 'مقالات' || s.key === 'articles' || s.slug === 'articles');
+          
+          const grouped = await Promise.all(
+            sectionsList.map(async (sec) => {
+              let secArticles: Article[] = [];
+              try {
+                const fetched = await getSectionArticles(issueIdNum, sec.id);
+                secArticles = fetched.map((a: ArticleDTO) => ({
+                  id: String(a.id),
+                  title: a.title,
+                  className: a.className ?? undefined,
+                  issueId: String(issueIdNum),
+                  issueTitle: det.title,
+                  views: (a.views_count ?? 0) as number,
+                  content: a.content ?? null,
+                  issue_section_id: a.issue_section_id ?? null,
+                }));
+              } catch (err) {
+                console.error(`Failed to fetch articles for section ${sec.id}, falling back`, err);
+                secArticles = mapped.filter(art => art.issue_section_id === sec.id);
+              }
+
+              if (sec.id === articlesSec?.id) {
+                const unclassified = mapped.filter(art => !art.issue_section_id);
+                const unclassifiedFiltered = unclassified.filter(u => !secArticles.some(a => a.id === u.id));
+                secArticles = [...secArticles, ...unclassifiedFiltered];
+              }
+
+              return {
+                ...sec,
+                articles: secArticles
+              };
+            })
+          );
+          
+          if (!articlesSec) {
+            const unclassified = mapped.filter(art => !art.issue_section_id);
+            if (unclassified.length > 0) {
+              grouped.push({
+                id: -1,
+                issue_id: Number(issueIdNum),
+                title: "مقالات غير مصنفة",
+                slug: "unclassified",
+                key: "unclassified",
+                sort_order: 999,
+                is_active: true,
+                articles: unclassified
+              });
+            }
+          }
+          
+          grouped.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          setSections(grouped);
+          setHasSections(true);
+        } else {
+          setHasSections(false);
+        }
+      } catch (err) {
+        console.error(err);
         if (!alive) return;
         setArticles([]);
+        setSections([]);
+        setHasSections(false);
       } finally {
         if (alive) setIsLoading(false);
       }
@@ -91,56 +169,140 @@ function ArticlesAdminPageInner() {
         <div className={styles.hint}>إجمالي: {articles.length}</div>
       </div>
 
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead className={styles.thead}>
-            <tr>
-              <th className={`${styles.th} ${styles.titleCol}`.trim()}>العنوان</th>
-              <th className={styles.th}>المشاهدات</th>
-              <th className={`${styles.th} ${styles.actionsCol}`.trim()}>إدارة المحتوى</th>
-            </tr>
-          </thead>
-          <tbody>
-            {articles.map((a) => (
-              <tr key={a.id} className={styles.row}>
-                <td className={`${styles.td} ${styles.titleCol}`.trim()}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span>{a.title}</span>
+      {hasSections ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {sections.map((sec) => (
+            <div className={styles.sectionCard} key={sec.id}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.sectionMeta}>
+                  <h2 className={styles.sectionTitle}>{sec.title}</h2>
+                  <span className={styles.sectionCount}>عدد المقالات: {sec.articles.length}</span>
+                </div>
+                {sec.id !== -1 && (
+                  <Link
+                    href={`/md-dash/articles/manage?issue_id=${encodeURIComponent(issueIdParam || '')}&issue_section_id=${encodeURIComponent(String(sec.id))}`}
+                    className={styles.addArticleBtn}
+                  >
+                    <Plus size={16} />
+                    <span>إضافة مقال</span>
+                  </Link>
+                )}
+              </div>
+
+              {sec.articles.length > 0 ? (
+                <>
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead className={styles.thead}>
+                        <tr>
+                          <th className={`${styles.th} ${styles.titleCol}`.trim()}>العنوان</th>
+                          <th className={styles.th}>المشاهدات</th>
+                          <th className={`${styles.th} ${styles.actionsCol}`.trim()}>تعديل المقال</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sec.articles.map((a) => (
+                          <tr key={a.id} className={styles.row}>
+                            <td className={`${styles.td} ${styles.titleCol}`.trim()}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                <span>{a.title}</span>
+                              </div>
+                            </td>
+                            <td className={styles.td}>{a.views}</td>
+                            <td className={`${styles.td} ${styles.actionsCol}`.trim()}>
+                              <Link
+                                href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
+                                className={styles.actionBtn}
+                              >
+                                تعديل المقال
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                </td>
-                <td className={styles.td}>{a.views}</td>
-                <td className={`${styles.td} ${styles.actionsCol}`.trim()}>
+                  <div className={styles.cards}>
+                    {sec.articles.map((a) => (
+                      <div key={a.id} className={styles.card}>
+                        <div className={styles.cardTitle}>{a.title}</div>
+                        <div className={styles.cardMeta}>
+                          <span>المشاهدات: {a.views}</span>
+                        </div>
+                        <div className={styles.cardActions}>
+                          <Link
+                            href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
+                            className={styles.cardActionBtn}
+                          >
+                            تعديل المقال
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className={styles.emptySectionState}>
+                  لا توجد مقالات داخل هذا القسم
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead className={styles.thead}>
+                <tr>
+                  <th className={`${styles.th} ${styles.titleCol}`.trim()}>العنوان</th>
+                  <th className={styles.th}>المشاهدات</th>
+                  <th className={`${styles.th} ${styles.actionsCol}`.trim()}>إدارة المحتوى</th>
+                </tr>
+              </thead>
+              <tbody>
+                {articles.map((a) => (
+                  <tr key={a.id} className={styles.row}>
+                    <td className={`${styles.td} ${styles.titleCol}`.trim()}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span>{a.title}</span>
+                      </div>
+                    </td>
+                    <td className={styles.td}>{a.views}</td>
+                    <td className={`${styles.td} ${styles.actionsCol}`.trim()}>
+                      <Link
+                        href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
+                        className={styles.actionBtn}
+                      >
+                        إدارة المحتوى
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.cards}>
+            {articles.map((a) => (
+              <div key={a.id} className={styles.card}>
+                <div className={styles.cardTitle}>{a.title}</div>
+                <div className={styles.cardMeta}>
+                  <span>المشاهدات: {a.views}</span>
+                </div>
+                <div className={styles.cardActions}>
                   <Link
                     href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
-                    className={styles.actionBtn}
+                    className={styles.cardActionBtn}
                   >
                     إدارة المحتوى
                   </Link>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className={styles.cards}>
-        {articles.map((a) => (
-          <div key={a.id} className={styles.card}>
-            <div className={styles.cardTitle}>{a.title}</div>
-            <div className={styles.cardMeta}>
-              <span>المشاهدات: {a.views}</span>
-            </div>
-            <div className={styles.cardActions}>
-              <Link
-                href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
-                className={styles.cardActionBtn}
-              >
-                إدارة المحتوى
-              </Link>
-            </div>
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       {isEditorOpen && (
         <div className={styles.modalOverlay}>

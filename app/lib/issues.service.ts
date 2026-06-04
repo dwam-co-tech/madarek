@@ -11,6 +11,7 @@ import type {
   UpdateIssueResponse,
   PublishIssueResponse,
   UnpublishIssueResponse,
+  IssueSection,
 } from './issues.model';
 
 function toSlug(input: string): string {
@@ -232,4 +233,32 @@ export async function updateIssue(id: number | string, payload: UpdateIssuePaylo
     }
     throw new Error('فشل تحديث العدد');
   }
+}
+
+export async function getIssueSections(issueId: number | string): Promise<IssueSection[]> {
+  const res = await fetch(buildApiUrl(`/api/issues/${issueId}/sections`), {
+    method: 'GET',
+    headers: makeAuthHeaders({ Accept: 'application/json' }),
+  });
+  const data = await parseJson(res);
+  ensureOk(res, data, 'فشل جلب أقسام العدد');
+  if (Array.isArray(data)) return data as IssueSection[];
+  const obj = data as { sections?: unknown; data?: unknown };
+  if (Array.isArray(obj.sections)) return obj.sections as IssueSection[];
+  if (Array.isArray(obj.data)) return obj.data as IssueSection[];
+  return [];
+}
+
+export async function getSectionArticles(issueId: number | string, sectionId: number | string): Promise<ArticleDTO[]> {
+  const res = await fetch(buildApiUrl(`/api/issues/${issueId}/sections/${sectionId}/articles`), {
+    method: 'GET',
+    headers: makeAuthHeaders({ Accept: 'application/json' }),
+  });
+  const data = await parseJson(res);
+  ensureOk(res, data, 'فشل جلب مقالات القسم');
+  if (Array.isArray(data)) return data as ArticleDTO[];
+  const obj = data as { articles?: unknown; data?: unknown };
+  if (Array.isArray(obj.articles)) return obj.articles as ArticleDTO[];
+  if (Array.isArray(obj.data)) return obj.data as ArticleDTO[];
+  return [];
 }

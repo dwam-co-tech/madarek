@@ -317,3 +317,73 @@
     gap: 0.6rem;
   }
 }
+
+.sectionCard {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 10px rgba(58, 36, 17, 0.04);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(99, 71, 34, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--brown-900);
+}
+
+.sectionMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sectionCount {
+  background-color: var(--beige-100);
+  color: var(--brown-900);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.addArticleBtn {
+  background-color: #634722c5;
+  color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.addArticleBtn:hover {
+  background-color: var(--beige-100);
+  color: var(--brown-900);
+}
+
+.emptySectionState {
+  padding: 2rem;
+  text-align: center;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+  color: #888;
+  font-size: 0.95rem;
+}
