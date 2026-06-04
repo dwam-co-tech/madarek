@@ -39,6 +39,15 @@ function formatDateTime(value?: string | null): string {
   }
 }
 
+function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
 function ManageArticlePageInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -245,8 +254,10 @@ function ManageArticlePageInner() {
         window.setTimeout(() => setToast(null), 3000);
       } else {
         // Create mode
+        const slug = generateSlug(form.title || 'مقال جديد');
         const payload = {
           title: form.title || 'مقال جديد',
+          slug: slug,
           open_title: form.open_title || form.title || 'مقال جديد',
           keywords: form.keywords,
           author_name: form.author_name,

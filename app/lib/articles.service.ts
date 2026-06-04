@@ -206,6 +206,7 @@ export async function createArticle(
     const makeForm = () => {
       const form = new FormData();
       form.append('title', payload.title);
+      if (payload.slug) form.append('slug', payload.slug);
       if (payload.issue_section_id !== undefined && payload.issue_section_id !== null) {
         form.append('issue_section_id', String(payload.issue_section_id));
       }

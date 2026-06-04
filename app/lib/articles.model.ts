@@ -57,6 +57,7 @@ export type UpdateArticleResponse = {
 
 export type CreateArticlePayload = {
   title: string;
+  slug?: string;
   content?: string;
   open_title?: string;
   keywords?: string;
