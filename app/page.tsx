@@ -41,8 +41,8 @@ const sectionItems: MenuItem[] = [
 function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null; startAnimation?: boolean }) {
   const [mounted, setMounted] = useState(false);
   const radius = 300; // px
-  const startDeg = 250;
-  const endDeg = 110;
+  const startDeg = 255;
+  const endDeg = 105;
 
   const palette = [
     "#4b2e2e",
