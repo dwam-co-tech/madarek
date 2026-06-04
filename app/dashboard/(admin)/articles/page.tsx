@@ -28,7 +28,7 @@ function ArticlesAdminPageInner() {
   const issueIdParam = params.get('id');
   const [isLoading, setIsLoading] = React.useState(false);
   const [articles, setArticles] = React.useState<Article[]>([]);
-  const [sections, setSections] = React.useState<(IssueSection & { articles: Article[] })[]>([]);
+  const [sections, setSections] = React.useState<(Omit<IssueSection, 'articles'> & { articles: Article[] })[]>([]);
   const [hasSections, setHasSections] = React.useState(false);
   const [issueTitle, setIssueTitle] = React.useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
@@ -78,7 +78,7 @@ function ArticlesAdminPageInner() {
           
           const articlesSec = sectionsList.find(s => s.title === 'مقالات' || s.key === 'articles' || s.slug === 'articles');
           
-          const grouped = await Promise.all(
+          const grouped: (Omit<IssueSection, 'articles'> & { articles: Article[] })[] = await Promise.all(
             sectionsList.map(async (sec) => {
               let secArticles: Article[] = [];
               try {
@@ -104,8 +104,9 @@ function ArticlesAdminPageInner() {
                 secArticles = [...secArticles, ...unclassifiedFiltered];
               }
 
+              const { articles: _, ...secWithoutArticles } = sec;
               return {
-                ...sec,
+                ...secWithoutArticles,
                 articles: secArticles
               };
             })
