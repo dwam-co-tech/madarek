@@ -272,3 +272,26 @@ export async function recordArticleView(id: number | string): Promise<void> {
     console.error('Failed to record view', error);
   }
 }
+
+export async function deleteArticle(id: number | string): Promise<void> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const token = getAuthToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(buildApiUrl(`/api/articles/${id}`), {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!res.ok) {
+    let msg = 'فشل حذف المقال';
+    try {
+      const data = await res.json() as any;
+      if (data && typeof data === 'object') {
+        if (typeof data.message === 'string') msg = data.message;
+        else if (typeof data.error === 'string') msg = data.error;
+      }
+    } catch {}
+    throw new Error(msg);
+  }
+}

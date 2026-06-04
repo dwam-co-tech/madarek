@@ -387,3 +387,19 @@
   color: #888;
   font-size: 0.95rem;
 }
+
+.deleteBtn {
+  background: #be123c;
+  color: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.deleteBtn:hover {
+  background-color: #9f1239;
+}

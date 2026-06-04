@@ -9,7 +9,7 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import { getIssue, getIssueSections, getSectionArticles } from '@/app/lib/issues.service';
 import type { ArticleDTO, IssueSection } from '@/app/lib/issues.model';
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor';
-import { getArticleById, updateArticle } from '@/app/lib/articles.service';
+import { getArticleById, updateArticle, deleteArticle } from '@/app/lib/articles.service';
 
 type Article = {
   id: string;
@@ -34,6 +34,25 @@ function ArticlesAdminPageInner() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editorArticle, setEditorArticle] = React.useState<Article | null>(null);
   const [editorContent, setEditorContent] = React.useState('');
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا المقال؟')) return;
+    setIsLoading(true);
+    try {
+      await deleteArticle(id);
+      setArticles((prev) => prev.filter((a) => a.id !== id));
+      setSections((prev) =>
+        prev.map((sec) => ({
+          ...sec,
+          articles: sec.articles.filter((a) => a.id !== id),
+        }))
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'فشل حذف المقال');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const noIssueId = !issueIdParam;
   React.useEffect(() => {
@@ -211,12 +230,21 @@ function ArticlesAdminPageInner() {
                             </td>
                             <td className={styles.td}>{a.views}</td>
                             <td className={`${styles.td} ${styles.actionsCol}`.trim()}>
-                              <Link
-                                href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
-                                className={styles.actionBtn}
-                              >
-                                تعديل المقال
-                              </Link>
+                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                <Link
+                                  href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
+                                  className={styles.actionBtn}
+                                >
+                                  تعديل المقال
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(a.id)}
+                                  className={styles.deleteBtn}
+                                >
+                                  حذف
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -230,13 +258,20 @@ function ArticlesAdminPageInner() {
                         <div className={styles.cardMeta}>
                           <span>المشاهدات: {a.views}</span>
                         </div>
-                        <div className={styles.cardActions}>
+                        <div className={styles.cardActions} style={{ display: 'flex', gap: '0.5rem' }}>
                           <Link
                             href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
                             className={styles.cardActionBtn}
                           >
                             تعديل المقال
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(a.id)}
+                            className={styles.deleteBtn}
+                          >
+                            حذف
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -271,12 +306,21 @@ function ArticlesAdminPageInner() {
                     </td>
                     <td className={styles.td}>{a.views}</td>
                     <td className={`${styles.td} ${styles.actionsCol}`.trim()}>
-                      <Link
-                        href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
-                        className={styles.actionBtn}
-                      >
-                        إدارة المحتوى
-                      </Link>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <Link
+                          href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
+                          className={styles.actionBtn}
+                        >
+                          إدارة المحتوى
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(a.id)}
+                          className={styles.deleteBtn}
+                        >
+                          حذف
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -291,13 +335,20 @@ function ArticlesAdminPageInner() {
                 <div className={styles.cardMeta}>
                   <span>المشاهدات: {a.views}</span>
                 </div>
-                <div className={styles.cardActions}>
+                <div className={styles.cardActions} style={{ display: 'flex', gap: '0.5rem' }}>
                   <Link
                     href={`/md-dash/articles/manage?id=${encodeURIComponent(a.id)}&issue_id=${encodeURIComponent(a.issueId)}`}
                     className={styles.cardActionBtn}
                   >
                     إدارة المحتوى
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(a.id)}
+                    className={styles.deleteBtn}
+                  >
+                    حذف
+                  </button>
                 </div>
               </div>
             ))}
