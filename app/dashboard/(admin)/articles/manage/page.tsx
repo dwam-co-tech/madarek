@@ -15,6 +15,7 @@ import type { ArticleDTO, IssueSection } from '@/app/lib/issues.model';
 type EditableFields = {
   title: string;
   open_title: string;
+  slug: string;
   keywords: string;
   author_name: string;
   gregorian_date: string;
@@ -61,6 +62,7 @@ function ManageArticlePageInner() {
   const [form, setForm] = React.useState<EditableFields>({
     title: '',
     open_title: '',
+    slug: '',
     keywords: '',
     author_name: '',
     gregorian_date: '',
@@ -111,6 +113,7 @@ function ManageArticlePageInner() {
       setForm({
         title: '',
         open_title: '',
+        slug: '',
         keywords: '',
         author_name: '',
         gregorian_date: '',
@@ -138,6 +141,7 @@ function ManageArticlePageInner() {
         setForm({
           title: a.title ?? '',
           open_title: a.open_title ?? a.title ?? '',
+          slug: a.slug ?? '',
           keywords: a.keywords ?? '',
           author_name: a.author_name ?? '',
           gregorian_date: a.gregorian_date ?? '',
@@ -223,7 +227,7 @@ function ManageArticlePageInner() {
         // Edit mode
         const payload = {
           title: form.title,
-          open_title: form.open_title,
+          open_title: form.title, // Force open_title to match title
           keywords: form.keywords,
           author_name: form.author_name,
           gregorian_date: form.gregorian_date,
@@ -238,6 +242,7 @@ function ManageArticlePageInner() {
           pdf_file: pdfFile ?? undefined,
           issue_section_id: parsedSectionId,
         };
+        console.log('DEBUG: Updating article payload:', payload);
         const res = await updateArticle(articleId, payload);
         const updated = res.article;
         setArticle(updated);
@@ -254,11 +259,11 @@ function ManageArticlePageInner() {
         window.setTimeout(() => setToast(null), 3000);
       } else {
         // Create mode
-        const slug = generateSlug(form.title || 'مقال جديد');
+        const finalSlug = form.slug.trim() || generateSlug(form.title || 'مقال جديد');
         const payload = {
           title: form.title || 'مقال جديد',
-          slug: slug,
-          open_title: form.open_title || form.title || 'مقال جديد',
+          slug: finalSlug,
+          open_title: form.title || 'مقال جديد', // Force open_title to match title
           keywords: form.keywords,
           author_name: form.author_name,
           gregorian_date: form.gregorian_date,
@@ -272,6 +277,7 @@ function ManageArticlePageInner() {
           pdf_file: pdfFile ?? undefined,
           issue_section_id: parsedSectionId,
         };
+        console.log('DEBUG: Creating article payload:', payload);
         const dummySectionId = parsedSectionId ? parsedSectionId : 1;
         await createArticle(dummySectionId, finalIssueId, payload);
         
@@ -347,43 +353,12 @@ function ManageArticlePageInner() {
                   value={form.title}
                   onChange={(e) => {
                     onChange('title', e.target.value);
-                    if (!form.open_title || form.open_title === form.title) {
-                      onChange('open_title', e.target.value);
+                    if (!form.slug || form.slug === generateSlug(form.title)) {
+                      onChange('slug', generateSlug(e.target.value));
                     }
                   }}
                   placeholder="العنوان الرئيسي للمقال"
                 />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>عنوان العرض (Open Title)</label>
-                <input
-                  className={styles.input}
-                  value={form.open_title}
-                  onChange={(e) => onChange('open_title', e.target.value)}
-                  placeholder="عنوان العرض في الصفحة"
-                />
-              </div>
-              
-              <div className={styles.field}>
-                <label className={styles.label}>القسم (التبويب)</label>
-                <select
-                  className={styles.input}
-                  value={form.issue_section_id}
-                  onChange={(e) => onChange('issue_section_id', e.target.value)}
-                  disabled={!articleId} // Lock the section when creating
-                >
-                  <option value="">بدون قسم (مقالات غير مصنفة)</option>
-                  {sections.map((sec) => (
-                    <option key={sec.id} value={sec.id}>
-                      {sec.title}
-                    </option>
-                  ))}
-                </select>
-                {!articleId && selectedSection && (
-                  <span style={{ fontSize: '0.85rem', color: '#634722c5', marginTop: '4px', display: 'block' }}>
-                    القسم المختار: {selectedSection.title} (مغلق)
-                  </span>
-                )}
               </div>
 
               <div className={styles.field}>
@@ -417,8 +392,17 @@ function ManageArticlePageInner() {
               </div>
               <div className={styles.fieldRow}>
                 <div className={styles.field}>
-                  <label className={styles.label}>Slug</label>
-                  <input className={styles.input} value={article?.slug ?? ''} readOnly placeholder="يتم توليده تلقائياً" />
+                  <label className={styles.label}>الرابط الفرعي (Slug)</label>
+                  <input
+                    className={styles.input}
+                    value={form.slug}
+                    onChange={(e) => {
+                      const rawVal = e.target.value;
+                      const converted = rawVal.replace(/\s+/g, '-').replace(/[^\p{L}\p{N}-]/gu, '');
+                      onChange('slug', converted);
+                    }}
+                    placeholder="مثال: مقالة-جديدة-او-new-article"
+                  />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>الكلمات المفتاحية</label>
