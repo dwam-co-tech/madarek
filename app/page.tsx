@@ -74,11 +74,9 @@ function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null
         const { label, href: baseHref, className } = item;
         const href = buildHref(baseHref);
         const bg =
-          i === sectionItems.length - 2
+          i >= sectionItems.length - 2
             ? "#D7BB91"
-            : i === sectionItems.length - 1
-              ? palette[sectionItems.length - 2]
-              : palette[i % palette.length];
+            : palette[i % palette.length];
         const styleVars: CSSProperties = {
           color: "#f5f5f5",
           backgroundImage: `linear-gradient(135deg, ${bg}, ${bg}e6)`,
