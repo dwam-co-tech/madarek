@@ -448,11 +448,36 @@ main.home-stage {
 }
 
 .arc-item {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 20px;
+  text-align: center;
   white-space: nowrap;
   border-radius: 9999px;
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.25);
-  transform: translate(50%, -50%);
   opacity: 0;
+  transition: transform 300ms ease, box-shadow 300ms ease;
+}
+
+.arc-item:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 9px 15px rgba(0, 0, 0, 0.28);
+}
+
+.arc-menu {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(100%, 340px);
+  gap: 10px;
+  margin-inline: auto;
+  padding-block: 24px;
+  transform: translateY(-15px);
 }
 
 .arc-label {
@@ -862,13 +887,13 @@ main.home-stage {
 }
 
 .dwam-logo {
-  border-radius: 9999px;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
-  background: #fff;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .arc-section {
-  margin-top: -10%;
+  margin-top: 0;
 }
 
 .arc-opening {

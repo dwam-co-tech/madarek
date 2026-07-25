@@ -18,10 +18,6 @@ type MenuItem = {
   label: string;
   href: string;
   className?: string;
-  angleDeg?: number;
-  radius?: number;
-  offsetX?: number;
-  offsetY?: number;
 };
 
 // Section items - now using dynamic route with issueId
@@ -40,9 +36,6 @@ const sectionItems: MenuItem[] = [
 
 function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null; startAnimation?: boolean }) {
   const [mounted, setMounted] = useState(false);
-  const verticalSpread = 248;
-  const arcDepth = 220;
-  const arcVerticalOffset = 22;
 
   const palette = [
     "#4b2e2e",
@@ -76,44 +69,35 @@ function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden" suppressHydrationWarning>
+    <nav className="arc-menu" aria-label="أقسام المجلة" suppressHydrationWarning>
       {sectionItems.map((item, i) => {
-        const { label, href: baseHref, className, angleDeg, radius: itemRadius, offsetX = 0, offsetY = 0 } = item;
+        const { label, href: baseHref, className } = item;
         const href = buildHref(baseHref);
-        const t = sectionItems.length === 1 ? 0 : i / (sectionItems.length - 1);
-        const evenlySpacedY = -verticalSpread + verticalSpread * 2 * t;
-        const normalizedY = evenlySpacedY / verticalSpread;
-        const curvedX =
-          angleDeg != null && itemRadius != null
-            ? Math.cos(angleDeg * (Math.PI / 180)) * itemRadius
-            : -Math.sqrt(Math.max(0, 1 - normalizedY ** 2)) * arcDepth;
-        const x = curvedX + offsetX;
-        const y = evenlySpacedY + arcVerticalOffset + offsetY;
-        const bg = i === sectionItems.length - 1 ? "#D7BB91" : palette[i % palette.length];
-        const left = `var(--left, calc(50% + ${x}px + var(--offset-x, 0px)))`;
-        const top = `var(--top, calc(50% + ${y}px + var(--offset-y, 0px)))`;
+        const bg =
+          i === sectionItems.length - 2
+            ? "#D7BB91"
+            : i === sectionItems.length - 1
+              ? palette[sectionItems.length - 2]
+              : palette[i % palette.length];
         const styleVars: CSSProperties = {
-          left,
-          top,
-          transform: "translate(50%, -50%)",
           color: "#f5f5f5",
           backgroundImage: `linear-gradient(135deg, ${bg}, ${bg}e6)`,
           opacity: mounted ? 1 : 0,
-          animation: mounted ? `fadeInUp 0.6s ease-out ${i * 0.1}s forwards` : "none",
+          animation: mounted ? `arc-enter 0.6s ease-out ${i * 0.1}s forwards` : "none",
         };
 
         return (
           <Link
             key={label}
             href={href}
-            className={`absolute select-none rounded-full px-5 py-3 text-[15px] shadow-md transition-transform duration-500 ease-out hover:-translate-y-1 hover:scale-[1.03] focus-visible:outline-none arc-item ${className ?? ""}`}
+            className={`arc-item select-none focus-visible:outline-none ${className ?? ""}`}
             style={styleVars}
           >
             <span className="arc-label font-fanan tracking-wide">{label}</span>
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
 
@@ -420,7 +404,7 @@ function HomeInner() {
               aria-label="تصميم وتطوير شركة دوام تك"
             >
               <span>تصميم وتطوير شركة</span>
-              <Image src="/02.webp" alt="شعار دوام تك" width={28} height={28} className="dwam-logo" />
+              <Image src="/02-transparent.webp" alt="شعار دوام تك" width={28} height={28} className="dwam-logo" />
             </a>
           </div>
         </div>
