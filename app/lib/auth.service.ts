@@ -3,6 +3,9 @@ import type { AuthResponse, User, LogoutResponse } from './auth.model';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
+export const ADMIN_LAST_ACTIVITY_KEY = 'admin_last_activity_at';
+export const ADMIN_INACTIVITY_TIMEOUT = 2 * 60 * 60 * 1000;
+const ADMIN_COOKIE_MAX_AGE = ADMIN_INACTIVITY_TIMEOUT / 1000;
 
 export async function checkAuth(): Promise<User | null> {
   const token = getAuthToken();
@@ -56,9 +59,10 @@ export function setAuth(auth: AuthResponse) {
   try {
     localStorage.setItem(TOKEN_KEY, auth.token);
     localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
+    localStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(Date.now()));
   } catch { }
-  document.cookie = 'admin_token=true; path=/; max-age=86400';
-  document.cookie = `admin_role=${encodeURIComponent(auth.user.role)}; path=/; max-age=86400`;
+  document.cookie = `admin_token=true; path=/; max-age=${ADMIN_COOKIE_MAX_AGE}; samesite=lax`;
+  document.cookie = `admin_role=${encodeURIComponent(auth.user.role)}; path=/; max-age=${ADMIN_COOKIE_MAX_AGE}; samesite=lax`;
 }
 
 export function getAuthToken(): string | null {
@@ -87,7 +91,7 @@ export function setAuthUser(user: User | null) {
     }
   } catch { }
   if (user) {
-    document.cookie = `admin_role=${encodeURIComponent(user.role)}; path=/; max-age=86400`;
+    document.cookie = `admin_role=${encodeURIComponent(user.role)}; path=/; max-age=${ADMIN_COOKIE_MAX_AGE}; samesite=lax`;
   }
 }
 
@@ -95,6 +99,7 @@ export function clearAuth() {
   try {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(ADMIN_LAST_ACTIVITY_KEY);
   } catch { }
   document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'admin_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -106,10 +111,16 @@ export async function logout(): Promise<LogoutResponse> {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  const res = await fetch(buildApiUrl('/api/logout'), {
-    method: 'POST',
-    headers,
-  });
+  let res: Response;
+  try {
+    res = await fetch(buildApiUrl('/api/logout'), {
+      method: 'POST',
+      headers,
+    });
+  } catch {
+    clearAuth();
+    return { message: 'تم تسجيل الخروج محليًا.' } as LogoutResponse;
+  }
   let data: unknown = null;
   try {
     data = await res.json();
@@ -128,4 +139,26 @@ export async function logout(): Promise<LogoutResponse> {
   const result =
     (data as LogoutResponse) ?? ({ message: 'Logged out successfully.' } as LogoutResponse);
   return result;
+}
+
+export function getLastAdminActivity(): number | null {
+  try {
+    const value = Number(localStorage.getItem(ADMIN_LAST_ACTIVITY_KEY));
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function recordAdminActivity(at = Date.now()): void {
+  try {
+    localStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(at));
+  } catch { }
+  if (getAuthToken()) {
+    document.cookie = `admin_token=true; path=/; max-age=${ADMIN_COOKIE_MAX_AGE}; samesite=lax`;
+    const user = getAuthUser();
+    if (user) {
+      document.cookie = `admin_role=${encodeURIComponent(user.role)}; path=/; max-age=${ADMIN_COOKIE_MAX_AGE}; samesite=lax`;
+    }
+  }
 }

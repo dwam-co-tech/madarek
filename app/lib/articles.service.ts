@@ -7,8 +7,77 @@ import type {
   UpdateArticleResponse,
   CreateArticlePayload,
   CreateArticleResponse,
+  SlugAvailabilityResponse,
 } from './articles.model';
 import type { ArticleDTO } from './issues.model';
+
+type ValidationErrors = Record<string, string[]>;
+
+export class ArticleRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly errors: ValidationErrors = {},
+  ) {
+    super(message);
+    this.name = 'ArticleRequestError';
+  }
+}
+
+async function parseResponse(res: Response): Promise<unknown> {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function requestError(res: Response, data: unknown, fallback: string): ArticleRequestError {
+  const body = typeof data === 'object' && data !== null
+    ? data as { message?: unknown; error?: unknown; errors?: unknown }
+    : {};
+  const errors = body.errors && typeof body.errors === 'object'
+    ? body.errors as ValidationErrors
+    : {};
+  const firstValidationMessage = Object.values(errors).flat().find((item) => typeof item === 'string');
+  let message = typeof firstValidationMessage === 'string'
+    ? firstValidationMessage
+    : typeof body.message === 'string'
+      ? body.message
+      : typeof body.error === 'string'
+        ? body.error
+        : fallback;
+
+  if (res.status === 401) {
+    message = 'انتهت جلسة الدخول. سيتم توجيهك لتسجيل الدخول مرة أخرى.';
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('madarek:unauthorized'));
+  } else if (res.status === 403) {
+    message = 'ليس لديك صلاحية لتنفيذ هذا الإجراء.';
+  }
+
+  return new ArticleRequestError(message, res.status, errors);
+}
+
+export async function checkArticleSlugAvailability(
+  slug: string,
+  ignoreId?: number | string,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const token = getAuthToken();
+  const params = new URLSearchParams({ slug });
+  if (ignoreId !== undefined) params.set('ignore_id', String(ignoreId));
+  const res = await fetch(buildApiUrl(`/api/articles/slug-availability?${params.toString()}`), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    signal,
+  });
+  const data = await parseResponse(res);
+  if (!res.ok) throw requestError(res, data, 'تعذر التحقق من الرابط الفرعي الآن.');
+  return Boolean((data as SlugAvailabilityResponse).available);
+}
 
 export async function getPublishedArticles(page = 1, perPage?: number, issueId?: number | string): Promise<GetArticlesResponse> {
   const headers: Record<string, string> = { Accept: 'application/json' };
@@ -75,12 +144,7 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
       headers: { ...baseHeaders, ...(extraHeaders ?? {}) },
       body,
     });
-    let data: unknown;
-    try {
-      data = await res.json();
-    } catch {
-      data = null;
-    }
+    const data = await parseResponse(res);
     return { res, data };
   };
   const hasFile = (typeof payload.featured_image !== 'undefined' && payload.featured_image !== null) ||
@@ -88,33 +152,35 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
   if (hasFile) {
     const makeForm = () => {
       const form = new FormData();
-      if (payload.title) form.append('title', payload.title);
-      if (payload.open_title) form.append('open_title', payload.open_title);
-      if (payload.keywords) form.append('keywords', payload.keywords);
-      if (payload.author_name) form.append('author_name', payload.author_name);
-      if (payload.gregorian_date) form.append('gregorian_date', payload.gregorian_date);
-      if (payload.hijri_date) form.append('hijri_date', payload.hijri_date);
+      if (typeof payload.title === 'string') form.append('title', payload.title);
+      if (typeof payload.slug === 'string') form.append('slug', payload.slug);
+      if (typeof payload.open_title === 'string') form.append('open_title', payload.open_title);
+      if (typeof payload.keywords === 'string') form.append('keywords', payload.keywords);
+      if (typeof payload.author_name === 'string') form.append('author_name', payload.author_name);
+      if (typeof payload.gregorian_date === 'string') form.append('gregorian_date', payload.gregorian_date);
+      if (typeof payload.hijri_date === 'string') form.append('hijri_date', payload.hijri_date);
       if (typeof payload.issue_id === 'number') {
         form.append('issue_id', String(payload.issue_id));
       }
-      if (payload.issue_section_id !== undefined && payload.issue_section_id !== null) {
-        form.append('issue_section_id', String(payload.issue_section_id));
+      if (payload.issue_section_id !== undefined) {
+        form.append('issue_section_id', payload.issue_section_id === null ? '' : String(payload.issue_section_id));
       }
       if (Array.isArray(payload.references)) {
+        form.append('references_present', '1');
         for (const ref of payload.references) {
           if (ref && typeof ref === 'object' && ref.title && ref.url) {
             form.append('references[]', JSON.stringify(ref));
           }
         }
       }
-      if (payload.references_tmp) form.append('references_tmp', payload.references_tmp);
+      if (typeof payload.references_tmp === 'string') form.append('references_tmp', payload.references_tmp);
       if (Array.isArray(payload.references_remove_indexes)) {
         for (const idx of payload.references_remove_indexes) {
           form.append('references_remove_indexes[]', String(idx));
         }
       }
       if (payload.status) form.append('status', payload.status);
-      if (payload.className) form.append('className', payload.className);
+      if (typeof payload.className === 'string') form.append('className', payload.className);
       if (typeof payload.content === 'string') form.append('content', payload.content);
       if (payload.featured_image) form.append('featured_image', payload.featured_image);
       if (payload.pdf_file) form.append('pdf_file', payload.pdf_file);
@@ -139,13 +205,7 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
         return data as UpdateArticleResponse;
       }
       if (res.status !== 405) {
-        let msg = 'فشل تحديث المقال';
-        if (typeof data === 'object' && data !== null) {
-          const maybe = data as { message?: unknown; error?: unknown };
-          if (typeof maybe.message === 'string') msg = maybe.message;
-          else if (typeof maybe.error === 'string') msg = maybe.error;
-        }
-        throw new Error(msg);
+        throw requestError(res, data, 'تعذر تحديث المقال. راجع البيانات وحاول مرة أخرى.');
       }
     }
     throw new Error('فشل تحديث المقال');
@@ -162,13 +222,7 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
         return data as UpdateArticleResponse;
       }
       if (res.status !== 405) {
-        let msg = 'فشل تحديث المقال';
-        if (typeof data === 'object' && data !== null) {
-          const maybe = data as { message?: unknown; error?: unknown };
-          if (typeof maybe.message === 'string') msg = maybe.message;
-          else if (typeof maybe.error === 'string') msg = maybe.error;
-        }
-        throw new Error(msg);
+        throw requestError(res, data, 'تعذر تحديث المقال. راجع البيانات وحاول مرة أخرى.');
       }
     }
     throw new Error('فشل تحديث المقال');
@@ -190,12 +244,7 @@ export async function createArticle(
       headers: { ...baseHeaders, ...(extraHeaders ?? {}) },
       body,
     });
-    let data: unknown;
-    try {
-      data = await res.json();
-    } catch {
-      data = null;
-    }
+    const data = await parseResponse(res);
     return { res, data };
   };
 
@@ -233,26 +282,14 @@ export async function createArticle(
 
     const { res, data } = await send('POST', makeForm());
     if (!res.ok) {
-      let msg = 'فشل إنشاء المقال';
-      if (typeof data === 'object' && data !== null) {
-        const maybe = data as { message?: unknown; error?: unknown };
-        if (typeof maybe.message === 'string') msg = maybe.message;
-        else if (typeof maybe.error === 'string') msg = maybe.error;
-      }
-      throw new Error(msg);
+      throw requestError(res, data, 'تعذر إنشاء المقال. راجع البيانات وحاول مرة أخرى.');
     }
     return data as CreateArticleResponse;
   } else {
     const jsonHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
     const { res, data } = await send('POST', JSON.stringify(payload), jsonHeaders);
     if (!res.ok) {
-      let msg = 'فشل إنشاء المقال';
-      if (typeof data === 'object' && data !== null) {
-        const maybe = data as { message?: unknown; error?: unknown };
-        if (typeof maybe.message === 'string') msg = maybe.message;
-        else if (typeof maybe.error === 'string') msg = maybe.error;
-      }
-      throw new Error(msg);
+      throw requestError(res, data, 'تعذر إنشاء المقال. راجع البيانات وحاول مرة أخرى.');
     }
     return data as CreateArticleResponse;
   }
@@ -286,10 +323,11 @@ export async function deleteArticle(id: number | string): Promise<void> {
   if (!res.ok) {
     let msg = 'فشل حذف المقال';
     try {
-      const data = await res.json() as any;
+      const data = await res.json() as unknown;
       if (data && typeof data === 'object') {
-        if (typeof data.message === 'string') msg = data.message;
-        else if (typeof data.error === 'string') msg = data.error;
+        const body = data as { message?: unknown; error?: unknown };
+        if (typeof body.message === 'string') msg = body.message;
+        else if (typeof body.error === 'string') msg = body.error;
       }
     } catch {}
     throw new Error(msg);

@@ -34,6 +34,7 @@ import type { ReferenceItem } from './issues.model';
 export type UpdateArticlePayload = {
   content?: string;
   title?: string;
+  slug?: string;
   open_title?: string;
   keywords?: string;
   author_name?: string;
@@ -76,4 +77,8 @@ export type CreateArticlePayload = {
 export type CreateArticleResponse = {
   message: string;
   article: import('./issues.model').ArticleDTO;
+};
+
+export type SlugAvailabilityResponse = {
+  available: boolean;
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -12,14 +12,21 @@ import {
   LogOut,
   Menu,
   X,
-  BarChart3,
   Database,
   Mail,
   Bell,
   FolderOpen
 } from 'lucide-react';
 import styles from './dashboard-layout.module.css';
-import { getAuthUser, logout } from '@/app/lib/auth.service';
+import {
+  ADMIN_INACTIVITY_TIMEOUT,
+  ADMIN_LAST_ACTIVITY_KEY,
+  clearAuth,
+  getAuthUser,
+  getLastAdminActivity,
+  logout,
+  recordAdminActivity,
+} from '@/app/lib/auth.service';
 import type { User } from '@/app/lib/auth.model';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -59,50 +66,87 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, [router, pathname, isAuthor, allowedAuthorPaths]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
-    } catch { }
-    router.push('/md-dash/login');
-  };
+    } catch {
+      clearAuth();
+    }
+    router.replace('/md-dash/login');
+  }, [router]);
 
-  // Auto logout after 30 minutes of inactivity
+  // Keep the session while the dashboard is active and end it after two real
+  // hours without activity, including across reloads and browser tabs.
   useEffect(() => {
-    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+    let lastPersistedAt = 0;
 
-    const resetTimer = () => {
-      // Clear existing timer
+    const scheduleExpiry = () => {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
-
-      // Set new timer
+      const lastActivity = getLastAdminActivity();
+      if (!lastActivity) {
+        recordAdminActivity();
+      } else if (Date.now() - lastActivity >= ADMIN_INACTIVITY_TIMEOUT) {
+        void handleLogout();
+        return;
+      }
+      const remaining = Math.max(
+        0,
+        ADMIN_INACTIVITY_TIMEOUT - (Date.now() - (getLastAdminActivity() ?? Date.now())),
+      );
       inactivityTimerRef.current = setTimeout(() => {
-        handleLogout();
-      }, INACTIVITY_TIMEOUT);
+        void handleLogout();
+      }, remaining);
     };
 
-    // Events that indicate user activity
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    const registerActivity = () => {
+      const now = Date.now();
+      // Mousemove/scroll can fire dozens of times per second. Persist at most
+      // once every 30 seconds while still rescheduling the in-memory timer.
+      if (now - lastPersistedAt >= 30_000) {
+        recordAdminActivity(now);
+        lastPersistedAt = now;
+      }
+      scheduleExpiry();
+    };
 
-    // Reset timer on any user activity
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== ADMIN_LAST_ACTIVITY_KEY) return;
+      if (event.newValue === null) {
+        clearAuth();
+        router.replace('/md-dash/login');
+        return;
+      }
+      scheduleExpiry();
+    };
+
+    const handleUnauthorized = () => {
+      clearAuth();
+      router.replace('/md-dash/login?reason=session');
+    };
+
+    const events: Array<keyof DocumentEventMap> = [
+      'pointerdown', 'mousemove', 'keydown', 'scroll', 'touchstart',
+    ];
     events.forEach(event => {
-      document.addEventListener(event, resetTimer);
+      document.addEventListener(event, registerActivity, { passive: true });
     });
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('madarek:unauthorized', handleUnauthorized);
+    scheduleExpiry();
 
-    // Initialize timer
-    resetTimer();
-
-    // Cleanup
     return () => {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
       events.forEach(event => {
-        document.removeEventListener(event, resetTimer);
+        document.removeEventListener(event, registerActivity);
       });
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('madarek:unauthorized', handleUnauthorized);
     };
-  }, [router]);
+  }, [handleLogout, router]);
 
   const menuItems = [
     { name: 'الرئيسية', icon: LayoutDashboard, path: '/md-dash' },
