@@ -11,6 +11,7 @@ import { getIssue, getPublishedIssues, getIssueSections, getSectionArticles, get
 import type { ArticleDTO, IssueDetailDTO } from "../../lib/issues.model";
 import { getMapByPublicSlug } from "../../lib/section-route-map";
 import PageLoader from "@/components/PageLoader";
+import ArticleShareButton from "../../components/ArticleShareButton";
 
 function getExcerpt(html?: string | null, maxLen = 150): string {
     if (!html) return "";
@@ -271,11 +272,12 @@ function SectionArticlesPageContent() {
                                         const detailUrl = `/section/${slug}?issueId=${issueId || issue?.id || ""}&articleId=${article.id}`;
                                         
                                         return (
-                                            <Link 
-                                                href={detailUrl} 
-                                                className={styles.card} 
-                                                key={article.id}
-                                            >
+                                            <article className={styles.card} key={article.id}>
+                                                <Link
+                                                    href={detailUrl}
+                                                    className={styles.cardLink}
+                                                    aria-label={`قراءة مقال ${article.title}`}
+                                                >
                                                 <div className={styles.cardImageContainer}>
                                                     <Image 
                                                         src={coverImg}
@@ -313,7 +315,14 @@ function SectionArticlesPageContent() {
                                                         <span className={styles.cardCTA}>اقرأ المقال ←</span>
                                                     </div>
                                                 </div>
-                                            </Link>
+                                                </Link>
+                                                <div className={styles.cardShareRow}>
+                                                    <ArticleShareButton
+                                                        href={detailUrl}
+                                                        title={`مجلة مدارك | ${article.title}`}
+                                                    />
+                                                </div>
+                                            </article>
                                         );
                                     })}
                                 </div>

@@ -18,10 +18,6 @@ type MenuItem = {
   label: string;
   href: string;
   className?: string;
-  angleDeg?: number;
-  radius?: number;
-  offsetX?: number;
-  offsetY?: number;
 };
 
 // Section items - now using dynamic route with issueId
@@ -35,14 +31,11 @@ const sectionItems: MenuItem[] = [
   { label: "خـزّانــة الوثــائق", href: "/sections/documents-lectures", className: "arc-archive" },
   { label: "مـحـطــات تـاريخية", href: "/sections/history", className: "arc-history" },
   { label: "عـصــارة الـكـتــب", href: "/sections/library", className: "arc-library" },
-  { label: "مقالات", href: "/sections/articles", className: "arc-articles" },
+  { label: "مــقــالات", href: "/sections/articles", className: "arc-articles" },
 ];
 
 function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null; startAnimation?: boolean }) {
   const [mounted, setMounted] = useState(false);
-  const radius = 300; // px
-  const startDeg = 255;
-  const endDeg = 105;
 
   const palette = [
     "#4b2e2e",
@@ -76,41 +69,33 @@ function ArcMenu({ issueId, startAnimation }: { issueId?: string | number | null
   };
 
   return (
-    <div className="relative h-screen w-full" suppressHydrationWarning>
+    <nav className="arc-menu" aria-label="أقسام المجلة" suppressHydrationWarning>
       {sectionItems.map((item, i) => {
-        const { label, href: baseHref, className, angleDeg, radius: itemRadius, offsetX = 0, offsetY = 0 } = item;
+        const { label, href: baseHref, className } = item;
         const href = buildHref(baseHref);
-        const t = sectionItems.length === 1 ? 0 : i / (sectionItems.length - 1);
-        const computedAngleDeg = angleDeg ?? startDeg + (endDeg - startDeg) * t;
-        const angle = computedAngleDeg * (Math.PI / 180);
-        const r = itemRadius ?? radius;
-        const x = Math.cos(angle) * r + offsetX;
-        const y = Math.sin(angle) * r + offsetY;
-        const bg = i === sectionItems.length - 1 ? "#D7BB91" : palette[i % palette.length];
-        const left = `var(--left, calc(50% + ${x}px + var(--offset-x, 0px)))`;
-        const top = `var(--top, calc(50% + ${y}px + var(--offset-y, 0px)))`;
+        const bg =
+          i >= sectionItems.length - 2
+            ? "#D7BB91"
+            : palette[i % palette.length];
         const styleVars: CSSProperties = {
-          left,
-          top,
-          transform: "translate(50%, -50%)",
           color: "#f5f5f5",
           backgroundImage: `linear-gradient(135deg, ${bg}, ${bg}e6)`,
           opacity: mounted ? 1 : 0,
-          animation: mounted ? `fadeInUp 0.6s ease-out ${i * 0.1}s forwards` : "none",
+          animation: mounted ? `arc-enter 0.6s ease-out ${i * 0.1}s forwards` : "none",
         };
 
         return (
           <Link
             key={label}
             href={href}
-            className={`absolute select-none rounded-full px-5 py-3 text-[15px] shadow-md transition-transform duration-500 ease-out hover:-translate-y-1 hover:scale-[1.03] focus-visible:outline-none arc-item ${className ?? ""}`}
+            className={`arc-item select-none focus-visible:outline-none ${className ?? ""}`}
             style={styleVars}
           >
             <span className="arc-label font-fanan tracking-wide">{label}</span>
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
 
@@ -338,37 +323,38 @@ function HomeInner() {
   return (
     <>
       {loading && <PageLoader message="جاري تحميل العدد..." />}
-      <main className="grid grid-cols-[30%_40%_30%] bg-[var(--beige-100)] home-stage" style={{ ["--home-bg-url"]: `url(\"${bgUrl}\")` } as CSSVars}>
-        <section className="relative flex items-center justify-center issue-col section-height">
-          <IssueSection
-            coverSrc={issueProps.coverSrc}
-            viewHref={issueProps.viewHref}
-            downloadHref={issueProps.downloadHref}
-            views={issueProps.views}
-            numberTitle={issueProps.numberTitle}
-            hijriYear={issueProps.hijriYear}
-            gregorianDate={issueProps.gregorianDate}
-            shareText={issueProps.shareText}
-          />
-        </section>
-        <section className="relative flex flex-col items-center justify-center logo-col section-height">
-          <Image
-            src={logoPng}
-            alt="شعار مدارك"
-            width={620}
-            height={620}
-            priority
-            className="drop-shadow-[0_10px_10px_var(--brown-900)] logo-main"
-          />
-          <p className="font-fanan text-center text-xl mt-4">
-            مجلة شهرية علمية متخصصة في بيان حقيقة الصوفية
-          </p>
-        </section>
-        <section className="flex items-center justify-center px-10 arc-section arc-col section-height">
-          <ArcMenu issueId={issue?.id} startAnimation={!loading} />
-        </section>
-      </main>
-      <footer className="site-footer">
+      <div className="home-shell">
+        <main className="grid grid-cols-[30%_40%_30%] bg-[var(--beige-100)] home-stage" style={{ ["--home-bg-url"]: `url(\"${bgUrl}\")` } as CSSVars}>
+          <section className="relative flex items-center justify-center issue-col section-height">
+            <IssueSection
+              coverSrc={issueProps.coverSrc}
+              viewHref={issueProps.viewHref}
+              downloadHref={issueProps.downloadHref}
+              views={issueProps.views}
+              numberTitle={issueProps.numberTitle}
+              hijriYear={issueProps.hijriYear}
+              gregorianDate={issueProps.gregorianDate}
+              shareText={issueProps.shareText}
+            />
+          </section>
+          <section className="relative flex flex-col items-center justify-center logo-col section-height">
+            <Image
+              src={logoPng}
+              alt="شعار مدارك"
+              width={620}
+              height={620}
+              priority
+              className="drop-shadow-[0_10px_10px_var(--brown-900)] logo-main"
+            />
+            <p className="font-fanan text-center text-xl mt-4">
+              مجلة شهرية علمية متخصصة في بيان حقيقة الصوفية
+            </p>
+          </section>
+          <section className="flex items-center justify-center px-10 arc-section arc-col section-height">
+            <ArcMenu issueId={issue?.id} startAnimation={!loading} />
+          </section>
+        </main>
+        <footer className="site-footer">
         <div className="footer-grid">
           <nav className="footer-links">
             <Link href="/about" className="footer-link">من نحن</Link>
@@ -408,14 +394,20 @@ function HomeInner() {
             <a href="https://www.facebook.com/profile.php?id=61584485048024&sk=about" target="_blank" rel="noreferrer noopener" className="fb-btn" aria-label="فيسبوك">
               <svg className="fb-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12.06C22 6.49 17.52 2 11.95 2S2 6.49 2 12.06c0 5.01 3.66 9.16 8.44 9.94v-7.03H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.97h-2.34v7.03C18.34 21.22 22 17.07 22 12.06Z" /></svg>
             </a>
-            <span className="footer-legal-text">حقوق النشر والاقتباس متاحة للجميع</span>
-            {/* <div className="design-credit">
-            <span>تصميم وتطوير</span>
-            <Image src="/dwam.png" alt="دوام" width={28} height={28} className="dwam-logo" />
-          </div> */}
+            <a
+              href="https://dwam-tech.com/"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="design-credit footer-legal-text"
+              aria-label="تصميم وتطوير شركة دوام تك"
+            >
+              <span>تصميم وتطوير شركة</span>
+              <Image src="/02-transparent.webp" alt="شعار دوام تك" width={28} height={28} className="dwam-logo" />
+            </a>
           </div>
         </div>
-      </footer>
+        </footer>
+      </div>
     </>
   );
 }
