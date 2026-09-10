@@ -168,7 +168,7 @@ export async function updateArticle(id: number | string, payload: UpdateArticleP
       if (Array.isArray(payload.references)) {
         form.append('references_present', '1');
         for (const ref of payload.references) {
-          if (ref && typeof ref === 'object' && ref.title && ref.url) {
+          if (ref && typeof ref === 'object' && ref.title) {
             form.append('references[]', JSON.stringify(ref));
           }
         }
@@ -266,7 +266,7 @@ export async function createArticle(
       if (payload.hijri_date) form.append('hijri_date', payload.hijri_date);
       if (Array.isArray(payload.references)) {
         for (const ref of payload.references) {
-          if (ref && typeof ref === 'object' && ref.title && ref.url) {
+          if (ref && typeof ref === 'object' && ref.title) {
             form.append('references[]', JSON.stringify(ref));
           }
         }

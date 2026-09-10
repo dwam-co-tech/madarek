@@ -208,8 +208,8 @@ function ManageArticlePageInner() {
 
   const addOrUpdateReference = () => {
     const title = refTitleInput.trim(); const url = refLinkInput.trim();
-    if (!title || !url) { setReferenceError('اكتب اسم المرجع ورابطه لإضافته.'); return; }
-    if (!validReferenceUrl(url)) { setReferenceError('اكتب رابطًا صحيحًا يبدأ بـ http:// أو https://'); return; }
+    if (!title) { setReferenceError('اكتب اسم المرجع لإضافته.'); return; }
+    if (url && !validReferenceUrl(url)) { setReferenceError('اكتب رابطًا صحيحًا يبدأ بـ http:// أو https://، أو اتركه فارغًا.'); return; }
     setReferencesItems((previous) => {
       if (editingReferenceIndex === null) return [...previous, { title, url }];
       const next = [...previous]; const old = next[editingReferenceIndex];
@@ -331,14 +331,14 @@ function ManageArticlePageInner() {
           </section>
 
           <section className={styles.card}>
-            <div className={styles.cardHeader}><span className={styles.cardIcon}><Link2 size={20} /></span><div><h2>المراجع</h2><p>أضف اسم المصدر ورابطه، ويمكنك التعديل أو الحذف قبل الحفظ.</p></div><span className={styles.countBadge}>{referencesItems.length}</span></div>
+            <div className={styles.cardHeader}><span className={styles.cardIcon}><Link2 size={20} /></span><div><h2>المراجع</h2><p>اسم المرجع مطلوب، أما الرابط فاختياري. ويمكنك التعديل أو الحذف قبل الحفظ.</p></div><span className={styles.countBadge}>{referencesItems.length}</span></div>
             <div className={styles.referenceComposer}>
               <div className={styles.field}><label htmlFor="reference-title">اسم المرجع</label><input id="reference-title" className={styles.input} value={refTitleInput} onChange={(e) => { setRefTitleInput(e.target.value); setReferenceError(''); }} placeholder="مثال: الموسوعة العربية" /></div>
-              <div className={styles.field}><label htmlFor="reference-url">رابط المرجع</label><input id="reference-url" className={styles.input} value={refLinkInput} onChange={(e) => { setRefLinkInput(e.target.value); setReferenceError(''); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOrUpdateReference(); } }} placeholder="https://example.com/source" dir="ltr" /></div>
+              <div className={styles.field}><label htmlFor="reference-url">رابط المرجع <span className={styles.optionalLabel}>اختياري</span></label><input id="reference-url" className={styles.input} value={refLinkInput} onChange={(e) => { setRefLinkInput(e.target.value); setReferenceError(''); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOrUpdateReference(); } }} placeholder="https://example.com/source أو اتركه فارغًا" dir="ltr" /></div>
               <button type="button" className={styles.addReferenceButton} onClick={addOrUpdateReference}>{editingReferenceIndex === null ? <Plus size={18} /> : <Save size={18} />}{editingReferenceIndex === null ? 'إضافة المرجع' : 'حفظ التعديل'}</button>
             </div>
             {(referenceError || fieldErrors.references) && <p className={styles.fieldError}>{referenceError || fieldErrors.references}</p>}
-            {referencesItems.length ? <div className={styles.referencesList}>{referencesItems.map((item, index) => <div className={styles.referenceItem} key={`${item.url}-${index}`}><span className={styles.referenceNumber}>{index + 1}</span><div><strong>{item.title}</strong><a href={item.url} target="_blank" rel="noreferrer" dir="ltr">{item.url}</a></div><div className={styles.referenceActions}><button type="button" onClick={() => { setRefTitleInput(item.title); setRefLinkInput(item.url); setEditingReferenceIndex(index); setReferenceError(''); }}>تعديل</button><button type="button" className={styles.deleteReference} onClick={() => { removeExistingReference(item); setReferencesItems((previous) => previous.filter((_, i) => i !== index)); if (editingReferenceIndex === index) { setEditingReferenceIndex(null); setRefTitleInput(''); setRefLinkInput(''); } setIsDirty(true); }}><Trash2 size={16} /> حذف</button></div></div>)}</div> : <div className={styles.emptyReferences}><Link2 size={22} /><span>لا توجد مراجع مضافة بعد</span></div>}
+            {referencesItems.length ? <div className={styles.referencesList}>{referencesItems.map((item, index) => <div className={styles.referenceItem} key={`${item.title}-${item.url}-${index}`}><span className={styles.referenceNumber}>{index + 1}</span><div><strong>{item.title}</strong>{item.url ? <a href={item.url} target="_blank" rel="noreferrer" dir="ltr">{item.url}</a> : <span className={styles.referenceWithoutLink}>مرجع نصي بدون رابط</span>}</div><div className={styles.referenceActions}><button type="button" onClick={() => { setRefTitleInput(item.title); setRefLinkInput(item.url); setEditingReferenceIndex(index); setReferenceError(''); }}>تعديل</button><button type="button" className={styles.deleteReference} onClick={() => { removeExistingReference(item); setReferencesItems((previous) => previous.filter((_, i) => i !== index)); if (editingReferenceIndex === index) { setEditingReferenceIndex(null); setRefTitleInput(''); setRefLinkInput(''); } setIsDirty(true); }}><Trash2 size={16} /> حذف</button></div></div>)}</div> : <div className={styles.emptyReferences}><Link2 size={22} /><span>لا توجد مراجع مضافة بعد</span></div>}
           </section>
         </main>
 
