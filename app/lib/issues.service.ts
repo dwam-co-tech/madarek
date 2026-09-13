@@ -67,7 +67,7 @@ export async function createIssue(payload: CreateIssuePayload): Promise<CreateIs
 }
 
 export async function getIssues(): Promise<IssueDTO[]> {
-  const res = await fetch(buildApiUrl('/api/issues'), {
+  const res = await fetch(buildApiUrl('/api/admin/issues'), {
     method: 'GET',
     headers: makeAuthHeaders(),
   });
@@ -131,6 +131,18 @@ export async function getIssue(id: number | string): Promise<IssueDetailDTO> {
   const res = await fetch(buildApiUrl(`/api/issues/${id}`), {
     method: 'GET',
     headers: makeAuthHeaders(),
+  });
+  const data = await parseJson(res);
+  if (!res.ok || typeof data !== 'object' || data === null) {
+    ensureOk(res, data, 'فشل جلب بيانات العدد');
+  }
+  return data as IssueDetailDTO;
+}
+
+export async function getAdminIssue(id: number | string): Promise<IssueDetailDTO> {
+  const res = await fetch(buildApiUrl(`/api/admin/issues/${id}`), {
+    method: 'GET',
+    headers: makeAuthHeaders({ Accept: 'application/json' }),
   });
   const data = await parseJson(res);
   if (!res.ok || typeof data !== 'object' || data === null) {
@@ -249,6 +261,16 @@ export async function getIssueSections(issueId: number | string): Promise<IssueS
   return [];
 }
 
+export async function getAdminIssueSections(issueId: number | string): Promise<IssueSection[]> {
+  const res = await fetch(buildApiUrl(`/api/admin/issues/${issueId}/sections`), {
+    method: 'GET',
+    headers: makeAuthHeaders({ Accept: 'application/json' }),
+  });
+  const data = await parseJson(res);
+  ensureOk(res, data, 'فشل جلب أقسام العدد');
+  return Array.isArray(data) ? data as IssueSection[] : [];
+}
+
 export async function getSectionArticles(issueId: number | string, sectionId: number | string): Promise<ArticleDTO[]> {
   const res = await fetch(buildApiUrl(`/api/issues/${issueId}/sections/${sectionId}/articles`), {
     method: 'GET',
@@ -261,4 +283,14 @@ export async function getSectionArticles(issueId: number | string, sectionId: nu
   if (Array.isArray(obj.articles)) return obj.articles as ArticleDTO[];
   if (Array.isArray(obj.data)) return obj.data as ArticleDTO[];
   return [];
+}
+
+export async function getAdminSectionArticles(issueId: number | string, sectionId: number | string): Promise<ArticleDTO[]> {
+  const res = await fetch(buildApiUrl(`/api/admin/issues/${issueId}/sections/${sectionId}/articles`), {
+    method: 'GET',
+    headers: makeAuthHeaders({ Accept: 'application/json' }),
+  });
+  const data = await parseJson(res);
+  ensureOk(res, data, 'فشل جلب مقالات القسم');
+  return Array.isArray(data) ? data as ArticleDTO[] : [];
 }

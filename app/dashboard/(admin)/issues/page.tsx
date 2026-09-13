@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Pencil, Trash2, Plus, Info } from 'lucide-react';
 import styles from '../issues.module.css';
-import { createIssue, getIssues, deleteIssue as deleteIssueApi, updateIssue as updateIssueApi, publishIssue as publishIssueApi, unpublishIssue as unpublishIssueApi, getIssue } from '@/app/lib/issues.service';
+import { createIssue, getIssues, deleteIssue as deleteIssueApi, updateIssue as updateIssueApi, publishIssue as publishIssueApi, unpublishIssue as unpublishIssueApi, getAdminIssue } from '@/app/lib/issues.service';
 import type { CreateIssueResponse } from '@/app/lib/issues.model';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import SearchFilter, { FieldDef, SearchQuery } from '@/components/SearchFilter';
@@ -171,7 +171,7 @@ function IssuesContent() {
       try {
         const results = await Promise.allSettled(
           issues.map(async (it) => {
-            const det = await getIssue(it.id);
+            const det = await getAdminIssue(it.id);
             const sum = det.articles.reduce((acc, a) => acc + ((a.views_count ?? 0) as number), 0);
             return { id: String(det.id), sum, publishAt: det.published_at ?? '' };
           })
@@ -400,7 +400,7 @@ function IssuesContent() {
       }
       if (it) {
         try {
-          const det = await getIssue(it.id);
+          const det = await getAdminIssue(it.id);
           setIssues((prevList) =>
             prevList.map((x) =>
               x.id === String(it!.id)

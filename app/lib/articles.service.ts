@@ -134,6 +134,18 @@ export async function getArticleById(id: number | string): Promise<ArticleDetail
   return data as ArticleDetailResponse;
 }
 
+export async function getAdminArticleById(id: number | string): Promise<ArticleDetailResponse> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const token = getAuthToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(buildApiUrl(`/api/admin/articles/${id}`), { method: 'GET', headers });
+  const data = await parseResponse(res);
+  if (!res.ok || typeof data !== 'object' || data === null) {
+    throw requestError(res, data, 'فشل جلب المقال');
+  }
+  return data as ArticleDetailResponse;
+}
+
 export async function updateArticle(id: number | string, payload: UpdateArticlePayload): Promise<UpdateArticleResponse> {
   const baseHeaders: Record<string, string> = { Accept: 'application/json' };
   const token = getAuthToken();

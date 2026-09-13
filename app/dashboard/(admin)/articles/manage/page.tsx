@@ -13,9 +13,9 @@ import styles from './manage.module.css';
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor';
 import {
   ArticleRequestError, checkArticleSlugAvailability, createArticle,
-  getArticleById, updateArticle,
+  getAdminArticleById, updateArticle,
 } from '@/app/lib/articles.service';
-import { getIssueSections } from '@/app/lib/issues.service';
+import { getAdminIssueSections } from '@/app/lib/issues.service';
 import type { ArticleDetailResponse } from '@/app/lib/articles.model';
 import type { ArticleDTO, IssueSection } from '@/app/lib/issues.model';
 
@@ -98,7 +98,7 @@ function ManageArticlePageInner() {
   React.useEffect(() => {
     if (!effectiveIssueId) return;
     let alive = true;
-    getIssueSections(effectiveIssueId).then((list) => {
+    getAdminIssueSections(effectiveIssueId).then((list) => {
       if (alive) setSections([...list].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)));
     }).catch(() => {
       if (alive) setNotice({ type: 'error', message: 'تعذر تحميل أقسام العدد. يمكنك المحاولة مرة أخرى بعد تحديث الصفحة.' });
@@ -115,7 +115,7 @@ function ManageArticlePageInner() {
     }
     let alive = true;
     setIsInitialLoading(true); setLoadFailed(false);
-    getArticleById(articleId).then((response: ArticleDetailResponse) => {
+    getAdminArticleById(articleId).then((response: ArticleDetailResponse) => {
       if (!alive) return;
       const current = response.article;
       setArticle(current);

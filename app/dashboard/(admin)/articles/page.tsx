@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import styles from '../articles.module.css';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { getIssue, getIssueSections, getSectionArticles } from '@/app/lib/issues.service';
+import { getAdminIssue, getAdminIssueSections, getAdminSectionArticles } from '@/app/lib/issues.service';
 import type { ArticleDTO, IssueSection } from '@/app/lib/issues.model';
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor';
 import { getArticleById, updateArticle, deleteArticle } from '@/app/lib/articles.service';
@@ -68,11 +68,11 @@ function ArticlesAdminPageInner() {
       setIsLoading(true);
       try {
         const issueIdNum = Number(issueIdParam);
-        const det = await getIssue(issueIdNum);
+        const det = await getAdminIssue(issueIdNum);
         
         let sectionsList: IssueSection[] = [];
         try {
-          sectionsList = det.sections && Array.isArray(det.sections) ? det.sections : await getIssueSections(issueIdNum);
+          sectionsList = det.sections && Array.isArray(det.sections) ? det.sections : await getAdminIssueSections(issueIdNum);
         } catch (e) {
           console.error("Failed to load sections", e);
         }
@@ -101,7 +101,7 @@ function ArticlesAdminPageInner() {
             sectionsList.map(async (sec) => {
               let secArticles: Article[] = [];
               try {
-                const fetched = await getSectionArticles(issueIdNum, sec.id);
+                const fetched = await getAdminSectionArticles(issueIdNum, sec.id);
                 secArticles = fetched.map((a: ArticleDTO) => ({
                   id: String(a.id),
                   title: a.title,
