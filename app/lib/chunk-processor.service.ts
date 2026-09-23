@@ -15,6 +15,12 @@ import {
     FinalizeResponse,
 } from './file-upload.model';
 import { buildApiUrl } from './api';
+import { getAuthToken } from './auth.service';
+
+function authHeaders(): Record<string, string> {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 /**
  * Configuration constants for chunk processing
@@ -103,6 +109,7 @@ export class ChunkProcessorService implements ChunkProcessor {
                 {
                     headers: {
                         'Content-Type': 'multipart/form-data',
+                        ...authHeaders(),
                     },
                     onUploadProgress: (progressEvent: AxiosProgressEvent) => {
                         if (progressCallback && progressEvent.total) {
@@ -153,6 +160,7 @@ export class ChunkProcessorService implements ChunkProcessor {
                 {
                     headers: {
                         'Content-Type': 'application/json',
+                        ...authHeaders(),
                     },
                 }
             );

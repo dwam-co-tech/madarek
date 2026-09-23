@@ -15,6 +15,7 @@ module.exports = {
         '!components/**/__tests__/**',
     ],
     moduleNameMapper: {
+        '^.+\\.module\\.css$': '<rootDir>/app/__mocks__/styleMock.js',
         '^@/(.*)$': '<rootDir>/app/$1',
     },
     transform: {

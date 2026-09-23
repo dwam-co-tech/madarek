@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL as BACKEND_ORIGIN } from '@/app/lib/api';
 import { Search, Filter, Download, Copy, ExternalLink, Calendar, FileText, Image, Video, Music, File as FileIcon, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://madarek-backend.test/api';
+const API_BASE_URL = `${BACKEND_ORIGIN}/api`;
 
 interface ArchivedFile {
     id: number;

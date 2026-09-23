@@ -22,12 +22,17 @@ export async function checkAuth(): Promise<User | null> {
 
     if (res.ok) {
       const user = await res.json() as User;
+      if (user.role !== 'admin' && user.role !== 'author') {
+        clearAuth();
+        return null;
+      }
       setAuthUser(user);
       return user;
-    } else {
+    } else if (res.status === 401 || res.status === 403) {
       clearAuth();
       return null;
     }
+    return null;
   } catch {
     return null;
   }
@@ -36,11 +41,13 @@ export async function checkAuth(): Promise<User | null> {
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch(buildApiUrl('/api/login'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
   if (!res.ok) {
+    if (res.status >= 500) throw new Error('حدث خطأ في الخادم. حاول مرة أخرى لاحقًا.');
+    if (res.status === 404) throw new Error('خدمة تسجيل الدخول غير متاحة.');
     let msg = (data && (data.message || data.error)) || 'خطأ في تسجيل الدخول';
     if (typeof msg === 'string') {
       const m = msg.toLowerCase();
@@ -51,6 +58,9 @@ export async function login(email: string, password: string): Promise<AuthRespon
     throw new Error(msg);
   }
   const auth = data as AuthResponse;
+  if (auth.user.role !== 'admin' && auth.user.role !== 'author') {
+    throw new Error('لا تملك صلاحية الدخول إلى لوحة الإدارة.');
+  }
   setAuth(auth);
   return auth;
 }

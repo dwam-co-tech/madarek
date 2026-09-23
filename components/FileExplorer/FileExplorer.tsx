@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL as BACKEND_ORIGIN } from '@/app/lib/api';
 import {
     Folder,
     File as FileIcon,
@@ -26,7 +27,7 @@ import {
     ArrowDown,
 } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://madarek-backend.test/api';
+const API_BASE_URL = `${BACKEND_ORIGIN}/api`;
 
 interface FileItem {
     name: string;

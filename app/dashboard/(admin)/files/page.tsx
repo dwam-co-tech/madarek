@@ -8,9 +8,10 @@ import FileExplorer from '@/components/FileExplorer/FileExplorer';
 import { FileProgress, UploadStatus, FileType } from '@/app/lib/file-upload.model';
 import { Upload, Archive, FolderOpen } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL as BACKEND_ORIGIN } from '@/app/lib/api';
 import styles from './files.module.css';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://madarek-backend.test/api';
+const API_BASE_URL = `${BACKEND_ORIGIN}/api`;
 
 // Helper function to get auth token from localStorage
 const getAuthToken = (): string | null => {

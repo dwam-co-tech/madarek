@@ -22,6 +22,12 @@ import { chunkProcessorService } from './chunk-processor.service';
 import { fileClassifierService } from './file-classifier.service';
 import axios from 'axios';
 import { buildApiUrl } from './api';
+import { getAuthToken } from './auth.service';
+
+function authHeaders(): Record<string, string> {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 /**
  * Configuration for the upload queue manager
@@ -202,7 +208,8 @@ export class UploadQueueManager extends EventEmitter {
 
         const response = await axios.post<InitiateUploadResponse>(
             buildApiUrl('/api/files/upload/initiate'),
-            request
+            request,
+            { headers: authHeaders() },
         );
 
         return response.data;
@@ -254,6 +261,7 @@ export class UploadQueueManager extends EventEmitter {
             {
                 headers: {
                     'Content-Type': 'multipart/form-data',
+                    ...authHeaders(),
                 },
                 onUploadProgress: (progressEvent) => {
                     if (progressEvent.total) {
@@ -395,7 +403,9 @@ export class UploadQueueManager extends EventEmitter {
 
             // Notify server to cancel upload (if it was initiated)
             try {
-                await axios.delete(buildApiUrl(`/api/files/upload/cancel/${fileId}`));
+                await axios.delete(buildApiUrl(`/api/files/upload/cancel/${fileId}`), {
+                    headers: authHeaders(),
+                });
             } catch (error) {
                 // Ignore errors from server cancellation
                 console.error('Failed to cancel upload on server:', error);

@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FileText, Pencil, Trash2, Plus, Info } from 'lucide-react';
+import { FileText, FolderOpen, Pencil, Trash2, Plus, Info } from 'lucide-react';
 import styles from '../issues.module.css';
 import { createIssue, getIssues, deleteIssue as deleteIssueApi, updateIssue as updateIssueApi, publishIssue as publishIssueApi, unpublishIssue as unpublishIssueApi, getAdminIssue } from '@/app/lib/issues.service';
 import type { CreateIssueResponse } from '@/app/lib/issues.model';
@@ -530,6 +530,10 @@ function IssuesContent() {
                       <FileText size={18} />
                       <span className={styles.iconLabel}>إدارة المقالات</span>
                     </Link>
+                    <Link href={`/md-dash/issues/${issue.id}/dossiers`} className={styles.iconBtn} title="الملفات الخاصة" aria-label={`الملفات الخاصة بالعدد ${issue.name}`}>
+                      <FolderOpen size={18} />
+                      <span className={styles.iconLabel}>الملفات الخاصة</span>
+                    </Link>
                     <button className={styles.iconBtn} onClick={() => openEditModal(issue)}>
                       <Pencil size={18} />
                       <span className={styles.iconLabel}>تعديل العدد</span>
@@ -579,6 +583,9 @@ function IssuesContent() {
             <div className={styles.cardActions}>
               <Link href={`/md-dash/articles?id=${issue.id}`} className={styles.iconBtn} title="إدارة المقالات">
                 <FileText size={18} />
+              </Link>
+              <Link href={`/md-dash/issues/${issue.id}/dossiers`} className={styles.iconBtn} title="الملفات الخاصة" aria-label={`الملفات الخاصة بالعدد ${issue.name}`}>
+                <FolderOpen size={18} />
               </Link>
               <button className={styles.iconBtn} onClick={() => openEditModal(issue)} title="تعديل العدد">
                 <Pencil size={18} />

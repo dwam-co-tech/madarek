@@ -15,12 +15,15 @@ import {
   Database,
   Mail,
   Bell,
-  FolderOpen
+  FolderOpen,
+  ListTree,
+  MessageSquare,
 } from 'lucide-react';
 import styles from './dashboard-layout.module.css';
 import {
   ADMIN_INACTIVITY_TIMEOUT,
   ADMIN_LAST_ACTIVITY_KEY,
+  checkAuth,
   clearAuth,
   getAuthUser,
   getLastAdminActivity,
@@ -33,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const inactivityTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const authUser: User | null = (() => {
     try {
@@ -52,16 +56,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     document.title = "لوحة تحكم مجلة مدارك";
     document.body.classList.add("dashboard-page");
 
-    const token = document.cookie.split('; ').find(row => row.startsWith('admin_token='));
-    if (!token) {
-      router.push('/md-dash/login');
-      return;
-    }
-    if (isAuthor && !allowedAuthorPaths.has(pathname)) {
-      router.replace('/md-dash/issues');
-    }
+    let active = true;
+    void checkAuth().then((user) => {
+      if (!active) return;
+      if (!user) {
+        setIsAuthenticated(false);
+        router.replace('/md-dash/login');
+        return;
+      }
+      if (user.role === 'author' && !allowedAuthorPaths.has(pathname) && !/^\/md-dash\/issues\/\d+\/dossiers$/.test(pathname)) {
+        router.replace('/md-dash/issues');
+        return;
+      }
+      setIsAuthenticated(true);
+    });
 
     return () => {
+      active = false;
       document.body.classList.remove("dashboard-page");
     };
   }, [router, pathname, isAuthor, allowedAuthorPaths]);
@@ -152,14 +163,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'الرئيسية', icon: LayoutDashboard, path: '/md-dash' },
     { name: 'إدارة الأعداد', icon: FileText, path: '/md-dash/issues' },
     { name: 'إدارة المقالات', icon: FileText, path: '/md-dash/articles' },
+    { name: 'إدارة شجرة المواضيع', icon: ListTree, path: '/md-dash/topics' },
+    { name: 'إدارة التعليقات', icon: MessageSquare, path: '/md-dash/comments' },
     { name: 'إدارة الملفات', icon: FolderOpen, path: '/md-dash/files' },
     { name: 'إدارة المشرفين', icon: Users, path: '/md-dash/admins' },
-    { name: 'إدارة المشتركين', icon: Mail, path: '/md-dash/newsletter' },
+    { name: 'إدارة النشرة البريدية', icon: Mail, path: '/md-dash/newsletter' },
     { name: 'إدارة الإشعارات', icon: Bell, path: '/md-dash/notifications' },
     { name: 'النسخ الاحتياطي', icon: Database, path: '/md-dash/backup' },
     { name: 'إعدادات الحساب', icon: Settings, path: '/md-dash/account-settings' },
   ];
   const visibleMenuItems = isAuthor ? menuItems.filter((it) => allowedAuthorPaths.has(it.path)) : menuItems;
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className={styles.container}>

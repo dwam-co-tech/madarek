@@ -47,8 +47,6 @@ export default function LoginPage() {
 
     if (!password) {
       newErrors.password = 'كلمة المرور مطلوبة';
-    } else if (password.length < 6) {
-      newErrors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
     }
 
     setErrors(newErrors);
