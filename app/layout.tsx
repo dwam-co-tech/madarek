@@ -63,6 +63,17 @@ const lateef = Lateef({
 export const metadata: Metadata = {
   title: "مجلة مدارك",
   description: "مجلة شهرية علمية متخصصه في بيان حقيقة الصوفية",
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+    nosnippet: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
   icons: {
     icon: "/logo3.png",
     shortcut: "/logo3.png",
