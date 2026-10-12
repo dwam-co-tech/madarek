@@ -205,21 +205,14 @@ describe('Feature: smart-file-manager, Property 9: Complete Archive Information 
           render(<FileArchive />);
 
           await waitFor(() => {
-                        }
-                    });
+            expect(screen.getByText(status)).toBeInTheDocument();
+          });
 
-                    render(<FileArchive />);
-
-                    await waitFor(() => {
-                        expect(screen.queryByRole('generic', { hidden: false })).not.toHaveClass('animate-spin');
-                    });
-
-                    const statusElement = screen.getByText(status);
-                    expect(statusElement).toBeInTheDocument();
-                    expect(statusElement).toHaveClass('rounded-full');
-                }
-            ),
-            { numRuns: 15 }
-        );
-    });
+          const statusElement = screen.getByText(status);
+          expect(statusElement).toHaveClass('rounded-full');
+        }
+      ),
+      { numRuns: 15 }
+    );
+  });
 });

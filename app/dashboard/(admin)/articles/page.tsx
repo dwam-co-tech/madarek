@@ -9,7 +9,7 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import { getAdminIssue, getAdminIssueSections, getAdminSectionArticles } from '@/app/lib/issues.service';
 import type { ArticleDTO, IssueSection } from '@/app/lib/issues.model';
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor';
-import { getArticleById, updateArticle, deleteArticle } from '@/app/lib/articles.service';
+import { updateArticle, deleteArticle } from '@/app/lib/articles.service';
 
 type Article = {
   id: string;
@@ -21,6 +21,8 @@ type Article = {
   content?: string | null;
   issue_section_id?: number | null;
 };
+
+const ARTICLES_PER_PAGE = 10;
 
 function ArticlesAdminPageInner() {
   const router = useRouter();
@@ -34,6 +36,29 @@ function ArticlesAdminPageInner() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editorArticle, setEditorArticle] = React.useState<Article | null>(null);
   const [editorContent, setEditorContent] = React.useState('');
+  const [sectionPages, setSectionPages] = React.useState<Record<number, number>>({});
+
+  const pageInfo = (items: Article[], sectionId: number) => {
+    const lastPage = Math.max(1, Math.ceil(items.length / ARTICLES_PER_PAGE));
+    const page = Math.min(Math.max(1, sectionPages[sectionId] ?? 1), lastPage);
+    return { page, lastPage, visible: items.slice((page - 1) * ARTICLES_PER_PAGE, page * ARTICLES_PER_PAGE) };
+  };
+
+  const articlePager = (items: Article[], sectionId: number, sectionTitle: string) => {
+    if (items.length <= ARTICLES_PER_PAGE) return null;
+    const { page, lastPage } = pageInfo(items, sectionId);
+    return (
+      <nav aria-label={`صفحات ${sectionTitle}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0.75rem' }}>
+        <button type="button" className={styles.actionBtn} disabled={page === 1}
+          onClick={() => setSectionPages((previous) => ({ ...previous, [sectionId]: page - 1 }))}
+          aria-label={`الصفحة السابقة في ${sectionTitle}`}>السابق</button>
+        <span>الصفحة {page} من {lastPage} — إجمالي المقالات: {items.length}</span>
+        <button type="button" className={styles.actionBtn} disabled={page === lastPage}
+          onClick={() => setSectionPages((previous) => ({ ...previous, [sectionId]: page + 1 }))}
+          aria-label={`الصفحة التالية في ${sectionTitle}`}>التالي</button>
+      </nav>
+    );
+  };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('هل أنت متأكد من حذف هذا المقال؟')) return;
@@ -60,6 +85,10 @@ function ArticlesAdminPageInner() {
       router.replace('/md-dash/issues?from=articles');
     }
   }, [noIssueId, router]);
+
+  React.useEffect(() => {
+    setSectionPages({});
+  }, [issueIdParam]);
 
   React.useEffect(() => {
     let alive = true;
@@ -123,7 +152,8 @@ function ArticlesAdminPageInner() {
                 secArticles = [...secArticles, ...unclassifiedFiltered];
               }
 
-              const { articles: _, ...secWithoutArticles } = sec;
+              const secWithoutArticles = { ...sec };
+              delete secWithoutArticles.articles;
               return {
                 ...secWithoutArticles,
                 articles: secArticles
@@ -221,7 +251,7 @@ function ArticlesAdminPageInner() {
                         </tr>
                       </thead>
                       <tbody>
-                        {sec.articles.map((a) => (
+                        {pageInfo(sec.articles, sec.id).visible.map((a) => (
                           <tr key={a.id} className={styles.row}>
                             <td className={`${styles.td} ${styles.titleCol}`.trim()}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -252,7 +282,7 @@ function ArticlesAdminPageInner() {
                     </table>
                   </div>
                   <div className={styles.cards}>
-                    {sec.articles.map((a) => (
+                    {pageInfo(sec.articles, sec.id).visible.map((a) => (
                       <div key={a.id} className={styles.card}>
                         <div className={styles.cardTitle}>{a.title}</div>
                         <div className={styles.cardMeta}>
@@ -276,6 +306,7 @@ function ArticlesAdminPageInner() {
                       </div>
                     ))}
                   </div>
+                  {articlePager(sec.articles, sec.id, sec.title)}
                 </>
               ) : (
                 <div className={styles.emptySectionState}>
@@ -297,7 +328,7 @@ function ArticlesAdminPageInner() {
                 </tr>
               </thead>
               <tbody>
-                {articles.map((a) => (
+                {pageInfo(articles, -1).visible.map((a) => (
                   <tr key={a.id} className={styles.row}>
                     <td className={`${styles.td} ${styles.titleCol}`.trim()}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -329,7 +360,7 @@ function ArticlesAdminPageInner() {
           </div>
 
           <div className={styles.cards}>
-            {articles.map((a) => (
+            {pageInfo(articles, -1).visible.map((a) => (
               <div key={a.id} className={styles.card}>
                 <div className={styles.cardTitle}>{a.title}</div>
                 <div className={styles.cardMeta}>
@@ -353,6 +384,7 @@ function ArticlesAdminPageInner() {
               </div>
             ))}
           </div>
+          {articlePager(articles, -1, 'المقالات')}
         </>
       )}
 

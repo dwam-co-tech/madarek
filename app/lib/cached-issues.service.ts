@@ -3,7 +3,7 @@ import * as issuesService from './issues.service';
 import type { IssueDTO, IssueDetailDTO, ArticleDTO, IssueSection } from './issues.model';
 
 const CACHE_KEYS = {
-  PUBLISHED_ISSUES: 'issues:published',
+  PUBLISHED_ISSUES: 'issues:published:all-pages:v2',
   ISSUE_DETAIL: (id: string | number) => `issue:${id}`,
   ISSUE_ARTICLES: (id: string | number) => `issue:${id}:articles`,
   ISSUE_SECTIONS: (id: string | number) => `issue:${id}:sections`,

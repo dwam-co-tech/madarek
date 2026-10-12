@@ -66,39 +66,41 @@ export async function createIssue(payload: CreateIssuePayload): Promise<CreateIs
   return data as CreateIssueResponse;
 }
 
+async function getEveryIssuePage(path: string, fallback: string): Promise<IssueDTO[]> {
+  const all: IssueDTO[] = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const params = new URLSearchParams(path === '/api/issues' ? { status: 'published' } : {});
+    params.set('page', String(page));
+    const res = await fetch(buildApiUrl(`${path}?${params.toString()}`), {
+      method: 'GET',
+      headers: makeAuthHeaders(),
+    });
+    const body = await parseJson(res);
+    ensureOk(res, body, fallback);
+
+    if (Array.isArray(body)) return [...all, ...(body as IssueDTO[])];
+    const result = body as { issues?: unknown; data?: unknown; last_page?: unknown } | null;
+    const entries = Array.isArray(result?.data) ? result.data : result?.issues;
+    if (!Array.isArray(entries)) throw new Error(fallback);
+    all.push(...entries as IssueDTO[]);
+    lastPage = typeof result?.last_page === 'number' && Number.isSafeInteger(result.last_page)
+      ? Math.max(1, result.last_page)
+      : 1;
+    page++;
+  } while (page <= lastPage);
+
+  return all;
+}
+
 export async function getIssues(): Promise<IssueDTO[]> {
-  const res = await fetch(buildApiUrl('/api/admin/issues'), {
-    method: 'GET',
-    headers: makeAuthHeaders(),
-  });
-  const data = await parseJson(res);
-  ensureOk(res, data, 'فشل جلب الأعداد');
-  if (Array.isArray(data)) return data as IssueDTO[];
-  const obj = data as { issues?: unknown; data?: unknown };
-  if (Array.isArray(obj.issues)) return obj.issues as IssueDTO[];
-  if (Array.isArray(obj.data)) return obj.data as IssueDTO[];
-  return [];
+  return getEveryIssuePage('/api/admin/issues', 'فشل جلب الأعداد');
 }
 
 export async function getPublishedIssues(): Promise<IssueDTO[]> {
-  const params = new URLSearchParams({ status: 'published' });
-  const res = await fetch(buildApiUrl(`/api/issues?${params.toString()}`), {
-    method: 'GET',
-    headers: makeAuthHeaders(),
-  });
-  const data = await parseJson(res);
-  ensureOk(res, data, 'فشل جلب الأعداد المنشورة');
-  if (Array.isArray(data)) return data as IssueDTO[];
-  const obj = data as { issues?: unknown; data?: unknown };
-  if (Array.isArray(obj.issues)) return obj.issues as IssueDTO[];
-  if (Array.isArray(obj.data)) return obj.data as IssueDTO[];
-  if (typeof data === 'object' && data !== null) {
-    const vals = Object.values(data);
-    if (Array.isArray(vals) && vals.every((v) => typeof v === 'object' && v !== null)) {
-      return vals as IssueDTO[];
-    }
-  }
-  return [];
+  return getEveryIssuePage('/api/issues', 'فشل جلب الأعداد المنشورة');
 }
 
 export async function publishIssue(id: number | string): Promise<PublishIssueResponse> {

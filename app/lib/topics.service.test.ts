@@ -1,4 +1,4 @@
-import { createTopic, deleteTopic, getAllAdminArticles, getTopics, TopicRequestError, updateTopic } from './topics.service';
+import { createTopic, deleteTopic, getAllAdminArticles, getTopics, updateTopic } from './topics.service';
 
 jest.mock('./auth.service', () => ({ getAuthToken: () => 'test-token' }));
 
@@ -76,7 +76,7 @@ describe('topics service', () => {
     fetchMock.mockResolvedValue(response({ errors: { slug: ['The slug has already been taken.'] } }, 422));
 
     await expect(createTopic({ name: 'مصر', slug: 'egypt', category: 'country', article_ids: [] }))
-      .rejects.toMatchObject<TopicRequestError>({
+      .rejects.toMatchObject({
         status: 422,
         errors: { slug: [expect.stringContaining('الرابط')] },
       });
@@ -85,7 +85,7 @@ describe('topics service', () => {
   it('turns network failures into a friendly Arabic error', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
 
-    await expect(getTopics()).rejects.toMatchObject<TopicRequestError>({
+    await expect(getTopics()).rejects.toMatchObject({
       status: 0,
       message: expect.stringContaining('تعذر الاتصال بالخادم'),
     });
